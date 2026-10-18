@@ -1,0 +1,23 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "firestore.rules",
+      "server.mjs",
+      "package.json",
+      "package-lock.json",
+      "README.md",
+      "**/.*",
+      "**/node_modules/**",
+      "test/**",
+      "server/**",
+      "data/**"
+    ],
+    "headers": [
+      { "source": "**/*.@(js|css|html)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+      { "source": "**/*.gz", "headers": [{ "key": "Content-Type", "value": "application/gzip" }] }
+    ]
+  },
+  "firestore": { "rules": "firestore.rules" }
+}

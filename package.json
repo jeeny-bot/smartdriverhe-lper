@@ -1,0 +1,15 @@
+{
+  "name": "call-assistant-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "콜비서 일지 - 웹 버전 (콜카드 이미지 → 기기 내 OCR → 일지·손익)",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "build": "node scripts/build-web.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

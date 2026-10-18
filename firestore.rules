@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 공유된 콜 위치. 로그인(익명 포함)한 사용자만 읽고, 자기 이름(uid)으로만 한 번 만들 수 있어요. 수정·삭제는 불가.
+    match /points/{id} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['lat', 'lng', 't', 'k', 'u', 'up'])
+        && request.resource.data.keys().hasAll(['lat', 'lng', 't', 'k', 'u', 'up'])
+        && request.resource.data.u == request.auth.uid
+        && request.resource.data.k == 's'
+        && request.resource.data.up == request.time
+        && request.resource.data.lat is number && request.resource.data.lat >= 33 && request.resource.data.lat <= 38.9
+        && request.resource.data.lng is number && request.resource.data.lng >= 124.5 && request.resource.data.lng <= 131.9
+        && request.resource.data.t is int
+        && request.resource.data.t <= request.time.toMillis() + 3600000
+        && request.resource.data.t >= request.time.toMillis() - 7776000000;
+      allow update, delete: if false;
+    }
+
+    // "연결 테스트" 버튼이 쓰는 내 확인용 문서
+    match /selftest/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['ok']);
+    }
+  }
+}

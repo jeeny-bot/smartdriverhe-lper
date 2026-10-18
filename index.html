@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0E141B" />
+  <title>콜비서</title>
+    <link rel="stylesheet" href="vendor/fonts/fonts.css" />
+    <script src="js/font-pref.js"></script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 8 8%27%3E%3Crect x=%273%27 width=%272%27 height=%278%27 fill=%27%23ffb400%27/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="css/style.css" />
+  <script>
+    // 저장된 화면 모드(밝게/어둡게)를 첫 화면 전에 적용해서 깜빡임을 막습니다.
+    try { const t = localStorage.getItem('call-assistant-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+  </script>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2V20a1 1 0 0 1-1 1h-4.5v-5.5h-5V21H5a1 1 0 0 1-1-1z" /></symbol>
+      <symbol id="i-map" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 12 3.5 6.5 6.5 0 0 1 18.5 10C18.5 15.4 12 21 12 21z" /><circle cx="12" cy="10" r="2.4" /></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M8.5 6.5H20M8.5 12H20M8.5 17.5H20" /><circle cx="4.5" cy="6.5" r=".9" /><circle cx="4.5" cy="12" r=".9" /><circle cx="4.5" cy="17.5" r=".9" /></symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V12M12 20V5M19 20v-9" /></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.2-1.8h6.6L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" /><circle cx="12" cy="13" r="3.2" /></symbol>
+      <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3" /><circle cx="12" cy="12" r="7.5" /></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+    </defs>
+  </svg>
+
+  <header class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v5M12 10v4M12 17v5" /></svg>
+      <h1>콜비서</h1>
+    </div>
+    <button class="work" id="workBtn" data-action="toggle-work" aria-live="polite"></button>
+  </header>
+  <p id="storageWarn" class="banner" hidden>저장할 수 없는 환경이에요. 창을 닫으면 기록이 사라져요.</p>
+
+  <main>
+    <!-- 홈 -->
+    <section id="tab-home" class="tab" data-tab="home">
+      <div class="meter" id="todayCard"></div>
+
+      <div id="drop" class="cta" tabindex="0" role="button" aria-label="콜카드 이미지 올리기">
+        <svg class="ico" aria-hidden="true"><use href="#i-camera" /></svg>
+        <span class="cta-text">
+          <strong>콜카드 올리기</strong>
+          <span class="hint-desktop">끌어놓기·붙여넣기(Ctrl+V)도 돼요</span>
+        </span>
+      </div>
+      <input id="fileInput" type="file" accept="image/*" multiple hidden />
+      <p class="note">이미지는 이 기기 안에서만 읽고 저장하지 않아요.</p>
+
+      <div id="results" class="stack"></div>
+
+      <div class="section-head">
+        <h2>오늘 수행 콜</h2>
+        <button class="btn ghost small" data-action="add-expense"><svg class="ico sm" aria-hidden="true"><use href="#i-plus" /></svg>지출 추가</button>
+      </div>
+      <div id="todayCalls" class="stack"></div>
+      <div id="todayExpenses" class="stack"></div>
+    </section>
+
+    <!-- 콜지도 -->
+    <section id="tab-map" class="tab" data-tab="map" hidden>
+      <div id="geoConsent" class="sheetcard" hidden>
+        <strong>주소를 좌표로 바꾸려면 동의가 필요해요</strong>
+        <p class="small muted">콜카드의 출발지·도착지 <b>주소 글자만</b> 지도 검색 서버(OpenStreetMap 또는 설정에서 고른 곳)로 보내 좌표로 바꿔요. 이름·전화번호·이미지는 보내지 않아요. 동의하지 않으면 지도에 내 콜이 표시되지 않아요.</p>
+        <button class="btn primary small" data-action="map-consent">동의하고 켜기</button>
+      </div>
+
+      <div class="mapwrap">
+        <div id="map" class="map" role="application" aria-label="콜 발생 지도"></div>
+        <div class="map-top" role="group" aria-label="추천 시간대">
+          <button class="seg on" data-action="map-when" data-v="0">지금</button>
+          <button class="seg" data-action="map-when" data-v="1">1시간 뒤</button>
+          <button class="seg" data-action="map-when" data-v="2">2시간 뒤</button>
+          <button class="seg" data-action="map-when" data-v="3">3시간 뒤</button>
+        </div>
+        <button class="fab" data-action="map-locate" aria-label="내 위치 찾기"><svg class="ico" aria-hidden="true"><use href="#i-locate" /></svg></button>
+      </div>
+      <div class="map-under">
+        <span id="mapStatus" class="small muted"></span>
+        <span class="row gap">
+          <button class="btn ghost small" data-action="map-set-center">지도 가운데를 내 위치로</button>
+          <label class="chip-check"><input id="mapShowPts" type="checkbox" /><span>콜 점 보기</span></label>
+        </span>
+      </div>
+      <p id="mapHint" class="note"></p>
+
+      <div id="analysis" class="analysis" hidden></div>
+      <p class="note" id="mapTapHint">지도를 누르면 그 지점을 도착지로 보고 콜밭인지 오지인지 알려 줘요.</p>
+
+      <div class="section-head"><h2>지금 가면 좋은 곳</h2></div>
+      <div id="recList" class="stack"></div>
+
+      <div class="section-head"><h2>다른 기사님들과 공유</h2></div>
+      <div class="panel stack" id="shareStatus"></div>
+      <p class="note">콜카드를 저장하면 "공유할까요?"가 떠요. 공유하면 내 콜의 <b>대략적인 출발 위치와 시각(시 단위)</b>만 모두의 콜지도에 더해져요.</p>
+
+      <div class="section-head"><h2>콜 위치 데이터</h2></div>
+      <div class="panel form">
+        <div id="mapData" class="small"></div>
+        <label class="switch"><input id="mapMode" type="checkbox" /><span>공유·테스트 데이터도 추천에 쓰기</span></label>
+        <button class="btn" data-action="map-regeo">주소 다시 변환</button>
+        <details>
+          <summary class="small">서버 없이 파일로 주고받기</summary>
+          <div class="stack">
+            <button class="btn" data-action="map-export">내 콜 위치 공유 파일 내보내기</button>
+            <button class="btn" data-action="map-import">공유 파일 불러오기</button>
+          </div>
+        </details>
+        <input id="packInput" type="file" accept="application/json,.json" hidden />
+        <div class="row gap wrap">
+          <button class="btn small" data-action="map-demo-add">테스트 데이터 넣기</button>
+          <button class="btn small danger" data-action="map-demo-clear">테스트 데이터 지우기</button>
+        </div>
+        <p class="muted small">공유 파일에는 대략적인 위치(약 100m)와 시(hour) 단위 시각만 들어가요. 요금·이름·전화번호·상세 주소·이미지는 들어가지 않아요.</p>
+      </div>
+    </section>
+
+    <!-- 일지 -->
+    <section id="tab-journal" class="tab" data-tab="journal" hidden>
+      <div class="section-head first">
+        <h2>일지</h2>
+        <button class="btn ghost small" data-action="add-call"><svg class="ico sm" aria-hidden="true"><use href="#i-plus" /></svg>직접 추가</button>
+      </div>
+      <div id="journalList"></div>
+    </section>
+
+    <!-- 통계 -->
+    <section id="tab-stats" class="tab" data-tab="stats" hidden>
+      <div class="monthnav">
+        <button class="btn ghost" data-action="month-prev" aria-label="이전 달">‹</button>
+        <h2 id="monthTitle"></h2>
+        <button class="btn ghost" data-action="month-next" aria-label="다음 달">›</button>
+      </div>
+      <div class="meter" id="monthCard"></div>
+      <div class="section-head"><h2>일별 순수익</h2></div>
+      <div id="dayChart" class="bars" aria-hidden="true"></div>
+      <div id="dayList" class="list"></div>
+    </section>
+
+    <!-- 설정 -->
+    <section id="tab-settings" class="tab" data-tab="settings" hidden>
+      <div class="section-head first"><h2>화면</h2></div>
+      <div class="panel form">
+        <label>화면 모드
+          <select id="themePref">
+            <option value="auto">기기 설정 따르기</option>
+            <option value="dark">항상 어둡게 (야간 운전용)</option>
+            <option value="light">항상 밝게</option>
+          </select></label>
+        <label>글꼴
+          <select id="fontPref"></select></label>
+        <p class="note" id="fontSample" style="margin:0">가나다라 마바사 · 서울 강남구 역삼동 → 성남시 분당구 · 42,000원</p>
+      </div>
+
+      <div class="section-head"><h2>수수료율</h2></div>
+      <p class="note">콜카드에 수수료가 적혀 있으면 그 값을 쓰고, 없을 때만 아래 수수료율로 계산해요. 기본값 20%는 임의의 초기값이니 본인 수수료율로 바꿔 주세요.</p>
+      <div class="panel form" id="feeForm"></div>
+
+      <div class="section-head"><h2>영업일</h2></div>
+      <p class="note">자정을 넘겨 일하는 경우를 위해, 하루가 바뀌는 새벽 시각을 정해요. (0~12시)</p>
+      <div class="panel form">
+        <label>영업일 기준 시각(시)
+          <input id="cutoff" type="number" inputmode="numeric" min="0" max="12" step="1" />
+        </label>
+      </div>
+
+      <div class="section-head"><h2>공유</h2></div>
+      <div class="panel form" id="shareSettings"></div>
+
+      <div class="section-head"><h2>지도</h2></div>
+      <div class="panel form" id="mapSettings"></div>
+
+      <div class="section-head"><h2>데이터</h2></div>
+      <p class="note">기록은 이 브라우저 안에만 저장돼요. 브라우저 데이터를 지우면 사라지니 가끔 백업하세요.</p>
+      <div class="panel form">
+        <button class="btn" data-action="export">백업 파일 내려받기</button>
+        <button class="btn" data-action="import">백업 파일 불러오기</button>
+        <input id="importInput" type="file" accept="application/json,.json" hidden />
+        <button class="btn" data-action="copy-raw">OCR 원문 모아 복사 (파서 개선용)</button>
+        <p class="muted small">원문에는 전화번호가 지워져 있지만, 고객 이름이나 상세 주소가 남아 있을 수 있어요. 다른 사람에게 보내기 전에 꼭 확인하세요.</p>
+        <button class="btn danger" data-action="clear-all">모든 기록 삭제</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" aria-label="주 메뉴">
+    <a href="#home" data-nav="home"><svg class="ico" aria-hidden="true"><use href="#i-home" /></svg><span>홈</span></a>
+    <a href="#map" data-nav="map"><svg class="ico" aria-hidden="true"><use href="#i-map" /></svg><span>콜지도</span></a>
+    <a href="#journal" data-nav="journal"><svg class="ico" aria-hidden="true"><use href="#i-list" /></svg><span>일지</span></a>
+    <a href="#stats" data-nav="stats"><svg class="ico" aria-hidden="true"><use href="#i-chart" /></svg><span>통계</span></a>
+    <a href="#settings" data-nav="settings"><svg class="ico" aria-hidden="true"><use href="#i-gear" /></svg><span>설정</span></a>
+  </nav>
+
+  <!-- 콜 수정/추가 -->
+  <dialog id="callDlg">
+    <form method="dialog" class="dlg" id="callForm">
+      <div class="grab" aria-hidden="true"></div>
+      <h3 id="callDlgTitle">콜 수정</h3>
+      <label>출발지 <input name="start" type="text" autocomplete="off" /></label>
+      <label>도착지 <input name="end" type="text" autocomplete="off" /></label>
+      <div class="two">
+        <label>요금(원) <input name="fare" type="text" inputmode="numeric" autocomplete="off" /></label>
+        <label>수수료(원) <input name="fee" type="text" inputmode="numeric" autocomplete="off" placeholder="비우면 자동" /></label>
+      </div>
+      <div class="two">
+        <label>플랫폼 <select name="platform"></select></label>
+        <label>시각 <input name="at" type="datetime-local" /></label>
+      </div>
+      <button type="button" class="btn small" id="callAnalyze">도착지 착지 분석 (지도)</button>
+      <details id="rawBox">
+        <summary>OCR 원문 보기</summary>
+        <textarea id="rawText" readonly rows="8"></textarea>
+        <button type="button" class="btn small" data-action="copy-this-raw">원문 복사</button>
+      </details>
+      <div class="dlg-actions">
+        <button type="button" class="btn danger" id="callDelete">삭제</button>
+        <span class="row gap">
+          <button type="button" class="btn" id="callCancel">취소</button>
+          <button type="submit" class="btn primary" value="save">저장</button>
+        </span>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 지출 추가 -->
+  <dialog id="expDlg">
+    <form method="dialog" class="dlg" id="expForm">
+      <div class="grab" aria-hidden="true"></div>
+      <h3>지출 추가</h3>
+      <div class="chips" id="expCats"></div>
+      <label>금액(원) <input name="amount" type="text" inputmode="numeric" autocomplete="off" required /></label>
+      <label>메모(선택) <input name="memo" type="text" autocomplete="off" /></label>
+      <div class="dlg-actions">
+        <span></span>
+        <span class="row gap">
+          <button type="button" class="btn" id="expCancel">취소</button>
+          <button type="submit" class="btn primary" value="save">저장</button>
+        </span>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
