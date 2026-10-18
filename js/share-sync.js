@@ -23,8 +23,17 @@ const fbStorage = {
 };
 export const firebase = createFirebaseShare({ config: firebaseConfig, storage: fbStorage });
 
-/** Firebase 설정(js/firebase-config.js)이 채워져 있으면 Firebase, 아니면 직접 만든 서버(server.mjs) */
-export const backendOf = (settings) => (firebase.configured() && settings.shareBackend !== 'server' ? 'firebase' : 'server');
+/**
+ * Firebase 설정(js/firebase-config.js)이 채워져 있으면 Firebase 를 씁니다.
+ * 직접 만든 서버는 "서버 주소를 직접 적었을 때"나 내 컴퓨터(localhost)에서 실행할 때만 씁니다.
+ * (Cloudflare Pages 같은 정적 배포 주소에는 공유 서버가 없어서 405 오류가 났습니다)
+ */
+const isLocal = () => ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+export const backendOf = (settings) => {
+  if (!firebase.configured()) return 'server';
+  if (settings.shareBackend === 'server' && ((settings.shareServer || '').trim() || isLocal())) return 'server';
+  return 'firebase';
+};
 
 export const serverBase = (settings) => (settings.shareServer || '').trim().replace(/\/+$/, '') || location.origin;
 
@@ -39,7 +48,7 @@ async function call(url, init) {
     } catch {
       /* JSON 아님 */
     }
-    if (res.status === 404 || (res.ok && body == null)) {
+    if (res.status === 404 || res.status === 405 || (res.ok && body == null)) {
       throw new Error('이 주소에는 공유 서버가 없어요. 설정 → 공유에서 서버 주소를 확인하세요');
     }
     if (!res.ok) throw new Error(body?.error ?? `공유 서버 오류 (${res.status})`);

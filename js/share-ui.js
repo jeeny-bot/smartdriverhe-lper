@@ -148,10 +148,10 @@ export function initShare({ toast, esc, onChange }) {
       ${firebase.configured() ? `<label>공유 방식
         <select id="shareBackend">
           <option value="firebase"${s.shareBackend !== 'server' ? ' selected' : ''}>Firebase</option>
-          <option value="server"${s.shareBackend === 'server' ? ' selected' : ''}>직접 만든 서버 (npm start)</option>
+          <option value="server"${s.shareBackend === 'server' ? ' selected' : ''}>직접 만든 서버</option>
         </select></label>` : ''}
-      <label>직접 만든 서버 주소 (비우면 이 화면을 연 서버)
-        <input id="shareServer" type="text" inputmode="url" autocomplete="off" placeholder="예: https://example.com" value="${esc(s.shareServer)}" /></label>`;
+      ${!firebase.configured() || s.shareBackend === 'server' ? `<label>서버 주소 (비우면 이 화면을 연 서버)
+        <input id="shareServer" type="text" inputmode="url" autocomplete="off" placeholder="예: https://example.com" value="${esc(s.shareServer)}" /></label>` : ''}`;
   }
 
   // ---------- 동작 ----------
