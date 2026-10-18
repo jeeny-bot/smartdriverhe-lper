@@ -120,6 +120,14 @@ export function addressScore(text) {
   return score > 0 ? score : 0;
 }
 
+// 화면의 버튼 글자("지도 처리 취소" 등)가 주소로 잘못 뽑히지 않게 거릅니다.
+const UI_WORDS = ['지도', '처리', '취소', '전화', '완료', '닫기', '확인', '복사', '길찾기', '내비', '문자', '수정', '상세', '보기', '배차', '이동', '출발', '도착', '운행'];
+const uiOnlyRe = new RegExp(`^(?:${UI_WORDS.join('|')})$`);
+export function isUiText(text) {
+  const words = String(text).replace(/[^가-힣\s]/g, ' ').split(/\s+/).filter(Boolean);
+  return words.length > 0 && words.every((w) => uiOnlyRe.test(w));
+}
+
 function pickPlace(lines, i, label, claimed, labelLines) {
   const m = label.exec(lines[i]);
   const own = m ? clean(m[1]) : '';
@@ -131,6 +139,7 @@ function pickPlace(lines, i, label, claimed, labelLines) {
     if (j < 0 || j >= lines.length || claimed.has(j) || labelLines.has(j)) continue;
     cands.push({ idx: j, text: lines[j], kind });
   }
+  for (let k = cands.length - 1; k >= 0; k--) if (isUiText(cands[k].text)) cands.splice(k, 1);
   for (const c of cands) c.score = addressScore(c.text);
   const scored = cands.filter((c) => c.score > 0).sort((a, b) => b.score - a.score || a.kind - b.kind);
   let best = scored[0];

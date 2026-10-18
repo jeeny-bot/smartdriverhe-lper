@@ -31,8 +31,11 @@ export const firebase = createFirebaseShare({ config: firebaseConfig, storage: f
 const isLocal = () => ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 export const backendOf = (settings) => {
   if (!firebase.configured()) return 'server';
-  if (settings.shareBackend === 'server' && ((settings.shareServer || '').trim() || isLocal())) return 'server';
-  return 'firebase';
+  if (settings.shareBackend !== 'server') return 'firebase';
+  if (isLocal()) return 'server';
+  // 서버 주소가 비었거나 이 사이트 주소와 같으면(정적 배포라 공유 서버가 없음) Firebase 로 보냅니다.
+  const own = (settings.shareServer || '').trim().replace(/\/+$/, '');
+  return own && own !== location.origin ? 'server' : 'firebase';
 };
 
 export const serverBase = (settings) => (settings.shareServer || '').trim().replace(/\/+$/, '') || location.origin;
