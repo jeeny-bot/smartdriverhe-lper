@@ -83,7 +83,7 @@ function callHtml(c) {
       <div class="net">${num(c.fare - c.fee)}<small>원</small></div>
       <div class="calc">${num(c.fare)} − ${num(c.fee)}${c.feeEstimated ? ' <span class="est">수수료 예상</span>' : ''}</div>
     </div>
-    ${c.needsReview ? '<div class="foot"><span class="tag review">확인 필요</span><span class="small muted">눌러서 수정하세요</span></div>' : ''}
+    ${c.needsReview ? '<div class="foot"><span class="tag review">확인 필요</span><svg class="ico sm muted" aria-hidden="true"><use href="#i-gear" /></svg></div>' : ''}
   </article>`;
 }
 
@@ -120,7 +120,7 @@ function renderHome() {
   $('#todayCalls').innerHTML = calls.length
     ? calls.slice(0, 5).map(callHtml).join('') +
       (calls.length > 5 ? `<a class="btn ghost" href="#journal">오늘 콜 ${calls.length}건 모두 보기</a>` : '')
-    : '<div class="empty"><b>아직 오늘 콜이 없어요</b>콜을 마치면 스크린샷을 올려 보세요. 자동으로 쌓여요.</div>';
+    : '<div class="empty"><svg class="ico" aria-hidden="true"><use href="#i-inbox" /></svg><b>오늘 콜 없음</b></div>';
   $('#todayExpenses').innerHTML = exps.length
     ? `<div class="section-head"><h2>오늘 지출</h2></div>` +
       exps
@@ -135,7 +135,7 @@ function renderHome() {
 function renderJournal() {
   const calls = [...store.state.calls].sort((a, b) => b.at - a.at).slice(0, 300);
   if (!calls.length) {
-    $('#journalList').innerHTML = '<div class="empty"><b>아직 기록이 없어요</b>홈에서 콜카드 스크린샷을 올리거나 "직접 추가"를 눌러 보세요.</div>';
+    $('#journalList').innerHTML = '<div class="empty"><svg class="ico" aria-hidden="true"><use href="#i-inbox" /></svg><b>기록 없음</b></div>';
     return;
   }
   const groups = [];
@@ -187,7 +187,7 @@ function renderStats() {
           return `<div class="col" title="${dayLabel(k)} ${num(v)}원"><i style="height:${v ? Math.max(3, (v / max) * 82) : 0}px"></i><span>${label}</span></div>`;
         })
         .join('')
-    : '<div class="empty-bars">이 달에는 기록이 없어요</div>';
+    : '<div class="empty-bars">기록 없음</div>';
   $('#dayList').innerHTML = [...days]
     .reverse()
     .map(({ date, summary: d }) => `<div class="dayrow"><span class="d">${dayLabel(date)}</span><span class="c">${d.count}건</span><span class="p">${num(d.profit)}<small class="muted">원</small></span></div>`)

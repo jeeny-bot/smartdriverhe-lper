@@ -121,12 +121,15 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
     const own = store.state.calls.filter((c) => c.startPos).length;
     const shared = total - own;
     const pending = pendingJobs().length;
-    $('#mapStatus').textContent = userPos ? (userPos.source === 'gps' ? '내 위치: GPS' : '내 위치: 직접 지정') : '내 위치 없음';
+    const st = $('#mapStatus');
+    st.className = `chip${userPos ? ' on' : ''}`;
+    st.innerHTML = `<svg class="ico sm" aria-hidden="true"><use href="#i-locate" /></svg>${userPos ? (userPos.source === 'gps' ? 'GPS' : '직접') : '위치 없음'}`;
     $('#mapData').innerHTML =
-      `콜 위치 <strong>${total}건</strong> (내 콜 ${own} · 공유/테스트 ${Math.max(0, shared)})` +
-      (pending ? ` · 주소 변환 대기 ${pending}건` : '') +
+      `<div class="datarow"><span><b>${total}</b>전체</span><span><b>${own}</b>내 콜</span><span><b>${Math.max(0, shared)}</b>공유·테스트</span>${pending ? `<span><b>${pending}</b>변환 대기</span>` : ''}</div>` +
       (geoError ? `<div class="bad small">${esc(geoError)}</div>` : '');
-    $('#mapHint').textContent = total < 15 ? '데이터가 적어서 추천이 정확하지 않아요. 콜카드를 올리거나 공유 파일/테스트 데이터를 넣어 보세요.' : userPos ? '' : '내 위치를 정하면 가까운 순으로 추천해요.';
+    const hint = $('#mapHint');
+    hint.hidden = total >= 15;
+    hint.innerHTML = '<svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg>데이터가 적어 추천이 정확하지 않아요';
     const top = recs[0]?.final || 1;
     $('#recList').innerHTML = recs.length
       ? recs
@@ -137,14 +140,14 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
               <div class="rank">${i + 1}</div>
               <div class="name">${esc(name)}</div>
               <div class="dist">${userPos ? `${r.distKm.toFixed(1)}<small>km</small>` : ''}</div>
-              <div class="sub">최근 콜 ${r.count}건 · 활발한 시간 ${r.peakHour}시 · ${conf}</div>
+              <div class="sub"><span>${r.count}건</span><span><svg class="ico sm" aria-hidden="true"><use href="#i-clock" /></svg>${r.peakHour}시</span><span class="dots" title="${conf}" data-n="${{ high: 3, mid: 2, low: 1 }[r.confidence]}"><i></i><i></i><i></i></span></div>
               <div class="heat" aria-hidden="true"><i style="width:${Math.max(6, Math.round((r.final / top) * 100))}%"></i></div>
-              <div class="acts"><button class="btn small" data-action="map-focus" data-i="${i}">지도에서 보기</button>
+              <div class="acts"><button class="btn small" data-action="map-focus" data-i="${i}">지도</button>
               <a class="btn small" href="${navLink(name, r)}" target="_blank" rel="noopener">길찾기</a></div>
             </article>`;
           })
           .join('')
-      : '<div class="empty"><b>추천할 곳이 아직 없어요</b>콜카드를 올리거나 설정에서 공유를 켜면 채워져요.</div>';
+      : '<div class="empty"><svg class="ico" aria-hidden="true"><use href="#i-map" /></svg><b>추천 없음</b></div>';
     lastRecs = recs;
     renderConsent();
   }
@@ -180,19 +183,17 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
     box.innerHTML = `
       <div class="where"><span>${esc(label)}</span><button class="btn ghost small" data-action="map-close-analysis">닫기</button></div>
       <div class="sign ${risk.level}"><b>${lv.text}</b><small>${lv.tip}</small></div>
-      <p class="small">${esc(risk.reason)}</p>
       <div class="facts">
-        ${risk.ratio != null ? `<span class="fact">콜밭 기준 대비 ${Math.round(risk.ratio * 100)}%</span>` : ''}
-        ${risk.nearCount ? `<span class="fact">반경 3km 기록 ${risk.nearCount}건</span>` : ''}
+        ${risk.ratio != null ? `<span class="fact" title="${esc(risk.reason)}">콜밭 대비 ${Math.round(risk.ratio * 100)}%</span>` : ''}
+        ${risk.nearCount ? `<span class="fact">주변 ${risk.nearCount}건</span>` : ''}
       </div>
-      ${exit ? `<p class="small">가장 가까운 콜밭은 <b>${esc(exit.label ?? '추천 지점')}</b>, ${exit.distKm.toFixed(1)}km예요.
-        <a href="${navLink(exit.label ?? '콜밭', exit)}" target="_blank" rel="noopener">길찾기</a></p>` : ''}
+      ${exit ? `<a class="exitrow" href="${navLink(exit.label ?? '콜밭', exit)}" target="_blank" rel="noopener"><svg class="ico sm" aria-hidden="true"><use href="#i-map" /></svg><span>가까운 콜밭 <b>${esc(exit.label ?? '추천 지점')}</b></span><span class="d">${exit.distKm.toFixed(1)}km</span></a>` : ''}
       <div class="acts">
-        <button class="btn small" data-action="map-together">함께가기 문구 복사</button>
-        <button class="btn small" data-action="map-taxi">택시 호출 앱 열기</button>
-        <a class="btn small" href="${navLink(label, pos)}" target="_blank" rel="noopener">도착지 길찾기</a>
+        <button class="btn small" data-action="map-together">함께가기 복사</button>
+        <button class="btn small" data-action="map-taxi">택시 호출</button>
+        <a class="btn small" href="${navLink(label, pos)}" target="_blank" rel="noopener">길찾기</a>
       </div>
-      <p class="note">판단은 이 기기에 모인 콜 위치 데이터만 기준이라, 데이터가 적을수록 틀릴 수 있어요.</p>`;
+`;
     box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
@@ -216,7 +217,7 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
         renderMap();
         toast('내 위치를 찾았어요');
       },
-      (err) => toast(err.code === 1 ? '위치 권한이 거부됐어요. 지도를 길게 보고 "지도 가운데를 내 위치로"를 써 보세요' : '위치를 찾지 못했어요'),
+      (err) => toast(err.code === 1 ? '위치 권한이 거부됐어요. 지도를 길게 보고 "여기를 내 위치로"를 써 보세요' : '위치를 찾지 못했어요'),
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 30_000 },
     );
   }
@@ -291,7 +292,7 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
         userPos = { lat: c.lat, lng: c.lng, source: 'manual' };
         fitted = true;
         renderMap();
-        toast('지도 가운데를 내 위치로 정했어요');
+        toast('내 위치로 지정했어요');
         break;
       }
       case 'map-focus': {

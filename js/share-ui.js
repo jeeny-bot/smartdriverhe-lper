@@ -95,13 +95,13 @@ export function initShare({ toast, esc, onChange }) {
     if (shareability(rec) !== 'ok') return `<div class="sharebox small muted">${MAX_AGE_DAYS}일이 지났거나 시각이 이상한 콜은 공유할 수 없어요. 일지에서 시각을 확인해 주세요.</div>`;
     const pv = previewOf(rec, roughPlace);
     return `<div class="sharebox">
-      <strong>이 콜 위치를 다른 기사님들과 공유할까요?</strong>
-      <div class="small">공유되는 내용: <b>${esc(pv.place)}</b> 부근 · ${esc(pv.when)} 출발</div>
-      <div class="muted small">요금·이름·전화번호·상세 주소·이미지는 공유되지 않아요. 공유하면 이 정보가 콜지도에서 서로의 추천에 쓰여요.</div>
+      <strong>이 콜 위치를 공유할까요?</strong>
+      <div class="small"><svg class="ico sm" aria-hidden="true"><use href="#i-map" /></svg> <b>${esc(pv.place)}</b> 부근 · ${esc(pv.when)}</div>
+      <div class="muted small"><svg class="ico sm" aria-hidden="true"><use href="#i-lock" /></svg> 요금·이름·연락처·이미지는 제외</div>
       <div class="row gap wrap">
         <button class="btn primary small" data-action="share-call" data-id="${rec.id}">공유하기</button>
         <button class="btn small" data-action="share-skip" data-id="${rec.id}">이번엔 안 함</button>
-        <button class="btn small" data-action="share-auto" data-id="${rec.id}">앞으로 자동 공유</button>
+        <button class="btn small" data-action="share-auto" data-id="${rec.id}">항상 공유</button>
       </div>
     </div>`;
   }
@@ -124,15 +124,15 @@ export function initShare({ toast, esc, onChange }) {
       status.state === 'error'
         ? `<div class="bad small">${esc(status.msg)}</div>`
         : status.state === 'ok'
-          ? `<div class="ok small">${backendOf(settings()) === 'firebase' ? 'Firebase' : '공유 서버'} 연결됨 · 다른 기사님 콜 ${status.others}건 받음${mins != null ? ` (${mins === 0 ? '방금' : `${mins}분 전`})` : ''}</div>`
-          : '<div class="muted small">공유 서버에 아직 연결하지 않았어요</div>';
+          ? `<div class="ok small">● 연결됨 · 받은 콜 ${status.others}건${mins != null ? ` (${mins === 0 ? '방금' : `${mins}분 전`})` : ''}</div>`
+          : '<div class="muted small">연결 안 됨</div>';
     const setup = firebase.configured() ? '' : '<div class="small warn-text">Firebase 설정이 비어 있어요. js/firebase-config.js 를 채우면 여러 기사님과 공유할 수 있어요 (README 참고)</div>';
     el.innerHTML = `${line}${setup}${testMsg}
-      <div class="small muted">내 공유 방식: ${mode}${waiting ? ` · 공유 대기 ${waiting}건` : ''}</div>
+      <div class="small muted"><svg class="ico sm" aria-hidden="true"><use href="#i-share" /></svg> ${mode}${waiting ? ` · 공유 대기 ${waiting}건` : ''}</div>
       <div class="row gap wrap">
-        <button class="btn small" data-action="share-refresh">지금 새로고침</button>
+        <button class="btn small" data-action="share-refresh">새로고침</button>
         ${firebase.configured() ? '<button class="btn small" data-action="share-test">연결 테스트</button>' : ''}
-        ${todo ? `<button class="btn small primary" data-action="share-all">아직 공유 안 한 내 콜 ${todo}건 공유</button>` : ''}
+        ${todo ? `<button class="btn small primary" data-action="share-all">내 콜 ${todo}건 공유</button>` : ''}
       </div>`;
   }
 

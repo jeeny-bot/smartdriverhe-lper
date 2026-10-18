@@ -25,6 +25,11 @@
       <symbol id="i-gear" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></symbol>
       <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.2-1.8h6.6L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" /><circle cx="12" cy="13" r="3.2" /></symbol>
       <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3" /><circle cx="12" cy="12" r="7.5" /></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v5.5M12 7.6v.1" /></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></symbol>
+      <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13.5 6.4 6.6A1.5 1.5 0 0 1 7.8 5.6h8.4a1.5 1.5 0 0 1 1.4 1L20 13.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z" /><path d="M4 13.5h4.2a1 1 0 0 1 1 .8 2.9 2.9 0 0 0 5.6 0 1 1 0 0 1 1-.8H20" /></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></symbol>
+      <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6.5" cy="12" r="2.3" /><circle cx="17.5" cy="6.5" r="2.3" /><circle cx="17.5" cy="17.5" r="2.3" /><path d="m8.5 10.9 7-3.3M8.5 13.1l7 3.3" /></symbol>
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
     </defs>
   </svg>
@@ -47,11 +52,10 @@
         <svg class="ico" aria-hidden="true"><use href="#i-camera" /></svg>
         <span class="cta-text">
           <strong>콜카드 올리기</strong>
-          <span class="hint-desktop">끌어놓기·붙여넣기(Ctrl+V)도 돼요</span>
         </span>
       </div>
       <input id="fileInput" type="file" accept="image/*" multiple hidden />
-      <p class="note">이미지는 이 기기 안에서만 읽고 저장하지 않아요.</p>
+      <p class="privacy"><svg class="ico sm" aria-hidden="true"><use href="#i-lock" /></svg>이 기기 안에서만 처리</p>
 
       <div id="results" class="stack"></div>
 
@@ -66,8 +70,7 @@
     <!-- 콜지도 -->
     <section id="tab-map" class="tab" data-tab="map" hidden>
       <div id="geoConsent" class="sheetcard" hidden>
-        <strong>주소를 좌표로 바꾸려면 동의가 필요해요</strong>
-        <p class="small muted">콜카드의 출발지·도착지 <b>주소 글자만</b> 지도 검색 서버(OpenStreetMap 또는 설정에서 고른 곳)로 보내 좌표로 바꿔요. 이름·전화번호·이미지는 보내지 않아요. 동의하지 않으면 지도에 내 콜이 표시되지 않아요.</p>
+        <div class="row between"><strong>주소를 좌표로 바꿀까요?</strong><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>콜카드의 출발지·도착지 <b>주소 글자만</b> 지도 검색 서버(OpenStreetMap 또는 설정에서 고른 곳)로 보내 좌표로 바꿔요. 이름·전화번호·이미지는 보내지 않아요. 동의하지 않으면 지도에 내 콜이 표시되지 않아요.</p></details></div>
         <button class="btn primary small" data-action="map-consent">동의하고 켜기</button>
       </div>
 
@@ -82,42 +85,39 @@
         <button class="fab" data-action="map-locate" aria-label="내 위치 찾기"><svg class="ico" aria-hidden="true"><use href="#i-locate" /></svg></button>
       </div>
       <div class="map-under">
-        <span id="mapStatus" class="small muted"></span>
+        <span id="mapStatus" class="chip"></span>
         <span class="row gap">
-          <button class="btn ghost small" data-action="map-set-center">지도 가운데를 내 위치로</button>
+          <button class="btn ghost small" data-action="map-set-center"><svg class="ico sm" aria-hidden="true"><use href="#i-map" /></svg>여기를 내 위치로</button>
           <label class="chip-check"><input id="mapShowPts" type="checkbox" /><span>콜 점 보기</span></label>
         </span>
       </div>
-      <p id="mapHint" class="note"></p>
+      <p id="mapHint" class="hintchip" hidden></p>
 
       <div id="analysis" class="analysis" hidden></div>
-      <p class="note" id="mapTapHint">지도를 누르면 그 지점을 도착지로 보고 콜밭인지 오지인지 알려 줘요.</p>
 
-      <div class="section-head"><h2>지금 가면 좋은 곳</h2></div>
+      <div class="section-head"><h2>지금 가면 좋은 곳</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>지도를 누르면 그 지점을 도착지로 보고 콜밭인지 오지인지 알려 줘요.</p></details></div>
       <div id="recList" class="stack"></div>
 
-      <div class="section-head"><h2>다른 기사님들과 공유</h2></div>
+      <div class="section-head"><h2>공유</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>콜카드를 저장하면 "공유할까요?"가 떠요. 공유하면 내 콜의 <b>대략적인 출발 위치(약 100m)와 시각(시 단위)</b>만 모두의 콜지도에 더해져요. 요금·이름·전화번호·상세 주소·이미지는 들어가지 않아요.</p></details></div>
       <div class="panel stack" id="shareStatus"></div>
-      <p class="note">콜카드를 저장하면 "공유할까요?"가 떠요. 공유하면 내 콜의 <b>대략적인 출발 위치와 시각(시 단위)</b>만 모두의 콜지도에 더해져요.</p>
 
       <div class="section-head"><h2>콜 위치 데이터</h2></div>
       <div class="panel form">
         <div id="mapData" class="small"></div>
-        <label class="switch"><input id="mapMode" type="checkbox" /><span>공유·테스트 데이터도 추천에 쓰기</span></label>
+        <label class="switch"><input id="mapMode" type="checkbox" /><span>공유·테스트 데이터 포함</span></label>
         <button class="btn" data-action="map-regeo">주소 다시 변환</button>
         <details>
-          <summary class="small">서버 없이 파일로 주고받기</summary>
+          <summary class="small">파일로 주고받기</summary>
           <div class="stack">
-            <button class="btn" data-action="map-export">내 콜 위치 공유 파일 내보내기</button>
-            <button class="btn" data-action="map-import">공유 파일 불러오기</button>
+            <button class="btn" data-action="map-export">내보내기</button>
+            <button class="btn" data-action="map-import">불러오기</button>
           </div>
         </details>
         <input id="packInput" type="file" accept="application/json,.json" hidden />
         <div class="row gap wrap">
-          <button class="btn small" data-action="map-demo-add">테스트 데이터 넣기</button>
-          <button class="btn small danger" data-action="map-demo-clear">테스트 데이터 지우기</button>
+          <button class="btn small" data-action="map-demo-add">테스트 넣기</button>
+          <button class="btn small danger" data-action="map-demo-clear">테스트 지우기</button>
         </div>
-        <p class="muted small">공유 파일에는 대략적인 위치(약 100m)와 시(hour) 단위 시각만 들어가요. 요금·이름·전화번호·상세 주소·이미지는 들어가지 않아요.</p>
       </div>
     </section>
 
@@ -155,17 +155,14 @@
           </select></label>
         <label>글꼴
           <select id="fontPref"></select></label>
-        <p class="note" id="fontSample" style="margin:0">가나다라 마바사 · 서울 강남구 역삼동 → 성남시 분당구 · 42,000원</p>
       </div>
 
-      <div class="section-head"><h2>수수료율</h2></div>
-      <p class="note">콜카드에 수수료가 적혀 있으면 그 값을 쓰고, 없을 때만 아래 수수료율로 계산해요. 기본값 20%는 임의의 초기값이니 본인 수수료율로 바꿔 주세요.</p>
+      <div class="section-head"><h2>수수료율</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>콜카드에 수수료가 적혀 있으면 그 값을 쓰고, 없을 때만 아래 수수료율로 계산해요. 기본값 20%는 임의의 초기값이니 본인 수수료율로 바꿔 주세요.</p></details></div>
       <div class="panel form" id="feeForm"></div>
 
-      <div class="section-head"><h2>영업일</h2></div>
-      <p class="note">자정을 넘겨 일하는 경우를 위해, 하루가 바뀌는 새벽 시각을 정해요. (0~12시)</p>
+      <div class="section-head"><h2>영업일</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>자정을 넘겨 일하는 경우를 위해, 하루가 바뀌는 새벽 시각을 정해요. (0~12시)</p></details></div>
       <div class="panel form">
-        <label>영업일 기준 시각(시)
+        <label>하루 시작(시)
           <input id="cutoff" type="number" inputmode="numeric" min="0" max="12" step="1" />
         </label>
       </div>
@@ -176,14 +173,12 @@
       <div class="section-head"><h2>지도</h2></div>
       <div class="panel form" id="mapSettings"></div>
 
-      <div class="section-head"><h2>데이터</h2></div>
-      <p class="note">기록은 이 브라우저 안에만 저장돼요. 브라우저 데이터를 지우면 사라지니 가끔 백업하세요.</p>
+      <div class="section-head"><h2>데이터</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>기록은 이 브라우저 안에만 저장돼요. 브라우저 데이터를 지우면 사라지니 가끔 백업하세요.</p></details></div>
       <div class="panel form">
         <button class="btn" data-action="export">백업 파일 내려받기</button>
         <button class="btn" data-action="import">백업 파일 불러오기</button>
         <input id="importInput" type="file" accept="application/json,.json" hidden />
-        <button class="btn" data-action="copy-raw">OCR 원문 모아 복사 (파서 개선용)</button>
-        <p class="muted small">원문에는 전화번호가 지워져 있지만, 고객 이름이나 상세 주소가 남아 있을 수 있어요. 다른 사람에게 보내기 전에 꼭 확인하세요.</p>
+        <div class="row gap"><button class="btn grow" data-action="copy-raw">OCR 원문 복사</button><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>파서 개선용이에요. 전화번호는 지워지지만 고객 이름이나 상세 주소가 남아 있을 수 있으니, 다른 사람에게 보내기 전에 꼭 확인하세요.</p></details></div>
         <button class="btn danger" data-action="clear-all">모든 기록 삭제</button>
       </div>
     </section>

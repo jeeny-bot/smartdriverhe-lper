@@ -330,3 +330,34 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* ---------- 글자 줄이기: 안내 팝오버·아이콘 칩 ---------- */
+.tip { position: relative; margin-left: auto; }
+.tip summary { list-style: none; cursor: pointer; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--muted); }
+.tip summary::-webkit-details-marker { display: none; }
+.tip[open] summary, .tip summary:hover { color: var(--amber-text); background: var(--raised); }
+.tip p { position: absolute; z-index: 20; right: 0; top: 36px; width: min(290px, calc(100vw - 40px)); padding: 12px 14px; border-radius: var(--r-md);
+  background: var(--raised); border: 1px solid var(--line); box-shadow: 0 10px 28px rgb(0 0 0 / 0.35); color: var(--text); font-size: 13px; line-height: 1.55; font-weight: 400; text-align: left; }
+.sheetcard .row.between { align-items: center; }
+.row .grow { flex: 1; }
+.privacy { display: flex; align-items: center; gap: 6px; margin: 8px 2px 0; color: var(--muted); font-size: 13px; }
+.ico.sm.muted { color: var(--faint); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); font-size: 13px; font-weight: 600; }
+.chip.on { color: var(--amber-text); border-color: var(--amber); }
+.hintchip { display: flex; align-items: center; gap: 6px; margin: 8px 2px 0; color: var(--muted); font-size: 13px; }
+.hintchip[hidden] { display: none; }
+.empty { display: grid; justify-items: center; gap: 8px; padding: 26px 16px; }
+.empty .ico { width: 34px; height: 34px; color: var(--faint); }
+.empty b { margin: 0; font-weight: 600; color: var(--muted); }
+.datarow { display: flex; gap: 8px; }
+.datarow span { flex: 1; display: grid; gap: 2px; padding: 8px 6px; border-radius: 10px; background: var(--raised); text-align: center; font-size: 12px; color: var(--muted); }
+.datarow b { font: var(--num-w) 20px/1.1 var(--font-num); color: var(--text); letter-spacing: 0; }
+.rec .sub { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+.rec .sub span { display: inline-flex; align-items: center; gap: 4px; }
+.dots { display: inline-flex; gap: 3px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+.dots[data-n='1'] i:nth-child(1), .dots[data-n='2'] i:nth-child(-n+2), .dots[data-n='3'] i { background: var(--amber); }
+.exitrow { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--raised); color: var(--text); text-decoration: none; font-size: 14px; }
+.exitrow span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exitrow .d { color: var(--amber-text); font-weight: 600; }
+.sharebox .ico.sm, .sheetcard .ico.sm { vertical-align: -2px; }
