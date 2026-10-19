@@ -15,13 +15,14 @@ const fbStorage = {
   },
   set(v) {
     try {
-      localStorage.setItem(FB_KEY, JSON.stringify(v));
+      if (v == null) localStorage.removeItem(FB_KEY);
+      else localStorage.setItem(FB_KEY, JSON.stringify(v));
     } catch {
       /* 저장 불가 환경 */
     }
   },
 };
-export const firebase = createFirebaseShare({ config: firebaseConfig, storage: fbStorage });
+export const firebase = createFirebaseShare({ config: firebaseConfig, storage: fbStorage, anonymous: false });
 
 /**
  * Firebase 설정(js/firebase-config.js)이 채워져 있으면 Firebase 를 씁니다.

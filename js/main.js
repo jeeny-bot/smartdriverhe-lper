@@ -4,6 +4,7 @@ import { store } from './store.js';
 import { recognize, hashFile, setProgressListener } from './ocr.js';
 import { initMapTab } from './map-tab.js';
 import { initShare } from './share-ui.js';
+import { initAuth } from './auth-ui.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -195,6 +196,7 @@ function renderStats() {
 }
 
 function renderSettings() {
+  auth.renderAccount();
   mapTab.renderSettingsBox();
   share.renderSettingsBox();
   const s = store.state.settings;
@@ -228,6 +230,7 @@ function renderAll() {
 
 const mapTab = initMapTab({ toast, copyText, esc, download, fmtTime });
 const share = initShare({ toast, esc, onChange: () => renderResults() });
+const auth = initAuth({ esc, toast, onLogin: () => { share.pullNow(true); renderSettings(); } });
 
 // ---------- 탭 이동 ----------
 function showTab(name) {

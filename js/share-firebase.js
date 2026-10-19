@@ -1,5 +1,5 @@
 // Firebase(Firestore) 로 콜 위치를 공유합니다. 라이브러리 없이 REST 주소를 직접 부르는 방식이라 설치할 게 없어요.
-//   로그인: 익명 (가입·비밀번호 없음. 기기마다 임의의 사용자 번호가 생겨요)
+//   로그인: 구글 (anonymous 옵션을 켜면 예전처럼 익명도 가능). 공유 문서에는 이메일·이름이 아니라 임의의 사용자 번호(uid)만 들어가요
 //   저장:   Firestore 컬렉션 "points" — 문서 하나 = 콜 하나 { lat, lng, t, k:'s', u, up }
 //           lat/lng 는 약 100m 단위, t 는 시(hour) 단위 시각, u 는 올린 사용자 번호, up 은 서버가 찍는 올린 시각
 // 보안은 firestore.rules(규칙)가 맡습니다. apiKey 는 공개돼도 되는 값이에요 (규칙이 막아 줘요).
@@ -53,7 +53,7 @@ export const docIdFor = (uid, p) => {
   return fnv(s, 0x811c9dc5) + fnv(s, 0x01000193 ^ 0x9e3779b1) + fnv(s.split('').reverse().join(''), 0x2545f491);
 };
 
-export function createFirebaseShare({ config, storage, endpoints = {}, now = () => Date.now(), fetchFn = (...a) => fetch(...a) }) {
+export function createFirebaseShare({ config, storage, endpoints = {}, now = () => Date.now(), fetchFn = (...a) => fetch(...a), anonymous = true, origin = () => (typeof location === 'undefined' ? 'http://localhost' : location.origin) }) {
   const ep = { ...DEFAULT_ENDPOINTS, ...endpoints };
   const configured = () => Boolean(config?.apiKey && config?.projectId && !/여기에|YOUR_|xxxx/i.test(`${config.apiKey}${config.projectId}`));
   const dbPath = () => `projects/${config.projectId}/databases/(default)/documents`;
@@ -88,19 +88,48 @@ export function createFirebaseShare({ config, storage, endpoints = {}, now = () 
     storage.set(tok);
     return tok;
   }
+  /** 구글 로그인 결과(ID 토큰)를 Firebase 로그인으로 바꿉니다. 이메일·이름은 이 기기에만 저장해 화면에 보여줍니다. */
+  async function signInWithGoogle(googleIdToken) {
+    if (!configured()) throw new ShareError('Firebase 설정이 비어 있어요', { code: 'noconfig', hint: 'js/firebase-config.js 에 apiKey 와 projectId 를 넣으세요' });
+    const b = await request(`${ep.auth}/accounts:signInWithIdp?key=${encodeURIComponent(config.apiKey)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        postBody: `id_token=${encodeURIComponent(googleIdToken)}&providerId=google.com`,
+        requestUri: origin(),
+        returnSecureToken: true,
+        returnIdpCredential: true,
+      }),
+    }, '구글 로그인');
+    const tok = {
+      uid: b.localId,
+      idToken: b.idToken,
+      refreshToken: b.refreshToken,
+      exp: now() + Number(b.expiresIn ?? 3600) * 1000,
+      provider: 'google.com',
+      profile: { email: b.email ?? '', name: b.displayName ?? '', photo: b.photoUrl ?? '' },
+    };
+    storage.set(tok);
+    return tok;
+  }
+  const isLoggedIn = () => Boolean(saved().refreshToken && saved().provider);
+  const account = () => (isLoggedIn() ? { uid: saved().uid, ...(saved().profile ?? {}) } : null);
+  const signOut = () => storage.set(null);
+
   async function refresh(tok) {
     const b = await request(`${ep.token}/token?key=${encodeURIComponent(config.apiKey)}`, {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(tok.refreshToken)}`,
     }, '로그인 갱신');
-    const next = { uid: b.user_id ?? tok.uid, idToken: b.id_token, refreshToken: b.refresh_token ?? tok.refreshToken, exp: now() + Number(b.expires_in ?? 3600) * 1000 };
+    const next = { ...tok, uid: b.user_id ?? tok.uid, idToken: b.id_token, refreshToken: b.refresh_token ?? tok.refreshToken, exp: now() + Number(b.expires_in ?? 3600) * 1000 };
     storage.set(next);
     return next;
   }
   async function auth() {
     if (!configured()) throw new ShareError('Firebase 설정이 비어 있어요', { code: 'noconfig', hint: 'js/firebase-config.js 에 apiKey 와 projectId 를 넣으세요' });
     const tok = saved();
+    if (!anonymous && !tok.provider) throw new ShareError('로그인이 필요해요', { code: 'login', hint: '설정에서 구글로 로그인하세요' });
     if (tok.idToken && tok.exp - now() > 60_000) return tok;
     if (tok.refreshToken) {
       try {
@@ -109,6 +138,7 @@ export function createFirebaseShare({ config, storage, endpoints = {}, now = () 
         if (e.code !== 'other' && e.code !== 'apikey') throw e;
       }
     }
+    if (!anonymous) throw new ShareError('로그인이 만료됐어요', { code: 'login', hint: '다시 구글로 로그인하세요' });
     return signUp();
   }
   const headers = (tok) => ({ authorization: `Bearer ${tok.idToken}`, 'content-type': 'application/json' });
@@ -215,5 +245,5 @@ export function createFirebaseShare({ config, storage, endpoints = {}, now = () 
     return { uid: tok.uid };
   }
 
-  return { configured, push, pull, selfTest, uid: () => saved().uid ?? null };
+  return { configured, push, pull, selfTest, signInWithGoogle, signOut, account, isLoggedIn, uid: () => saved().uid ?? null };
 }

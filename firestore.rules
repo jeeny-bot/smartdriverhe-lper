@@ -2,10 +2,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 공유된 콜 위치. 로그인(익명 포함)한 사용자만 읽고, 자기 이름(uid)으로만 한 번 만들 수 있어요. 수정·삭제는 불가.
+    // 구글 등으로 로그인한 사용자만 허용 (익명 로그인은 막음)
+    function signedIn() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    // 공유된 콜 위치. 로그인한 사용자만 읽고, 자기 이름(uid)으로만 한 번 만들 수 있어요. 수정·삭제는 불가.
     match /points/{id} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
+      allow read: if signedIn();
+      allow create: if signedIn()
         && request.resource.data.keys().hasOnly(['lat', 'lng', 't', 'k', 'u', 'up'])
         && request.resource.data.keys().hasAll(['lat', 'lng', 't', 'k', 'u', 'up'])
         && request.resource.data.u == request.auth.uid
@@ -21,8 +26,8 @@ service cloud.firestore {
 
     // "연결 테스트" 버튼이 쓰는 내 확인용 문서
     match /selftest/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null && request.auth.uid == uid
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['ok']);
     }
   }

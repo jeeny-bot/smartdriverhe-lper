@@ -361,3 +361,23 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
 .exitrow span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .exitrow .d { color: var(--amber-text); font-weight: 600; }
 .sharebox .ico.sm, .sheetcard .ico.sm { vertical-align: -2px; }
+
+/* ---------- 로그인 화면·계정 ---------- */
+body.locked { overflow: hidden; }
+.gate { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: var(--bg);
+  background-image: linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--amber) 8%, transparent)); }
+.gate[hidden] { display: none; }
+.gate-card { display: grid; justify-items: center; gap: 10px; width: min(340px, 100%); text-align: center; }
+.gate-icon { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.4); }
+.gate h1 { font: var(--num-w) 34px/1.1 var(--font-num); letter-spacing: 0; margin-top: 8px; }
+.gate-sub { color: var(--muted); font-size: 15px; margin-bottom: 22px; }
+.gate-btn { min-height: 44px; display: grid; justify-items: center; }
+.gate.busy .gate-btn { opacity: 0.5; pointer-events: none; }
+.gate-msg { color: var(--danger); font-size: 14px; line-height: 1.5; }
+.gate-msg[hidden] { display: none; }
+.gate-note { display: flex; align-items: center; gap: 6px; margin-top: 18px; color: var(--muted); font-size: 13px; }
+.acct { display: flex; align-items: center; gap: 12px; }
+.acct .avatar { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--amber); color: var(--amber-ink); font: 700 18px/1 var(--font); }
+.acct .who { flex: 1; min-width: 0; display: grid; }
+.acct .who b, .acct .who small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct .who small { color: var(--muted); font-size: 13px; }

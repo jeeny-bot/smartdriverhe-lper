@@ -8,7 +8,10 @@
   <title>콜비서</title>
     <link rel="stylesheet" href="vendor/fonts/fonts.css" />
     <script src="js/font-pref.js"></script>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 8 8%27%3E%3Crect x=%273%27 width=%272%27 height=%278%27 fill=%27%23ffb400%27/%3E%3C/svg%3E" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" href="css/style.css" />
   <script>
     // 저장된 화면 모드(밝게/어둡게)를 첫 화면 전에 적용해서 깜빡임을 막습니다.
@@ -33,6 +36,17 @@
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
     </defs>
   </svg>
+
+  <div id="loginGate" class="gate" hidden>
+    <div class="gate-card">
+      <img class="gate-icon" src="icons/icon.svg" alt="" width="96" height="96" />
+      <h1>콜비서</h1>
+      <p class="gate-sub">대리기사님을 위한 콜 기록·정산·콜지도</p>
+      <div id="gBtn" class="gate-btn"></div>
+      <p class="gate-msg" role="alert" hidden></p>
+      <p class="gate-note"><svg class="ico sm" aria-hidden="true"><use href="#i-lock" /></svg>이메일은 로그인에만 쓰이고, 공유에는 들어가지 않아요</p>
+    </div>
+  </div>
 
   <header class="top">
     <div class="brand">
@@ -145,7 +159,10 @@
 
     <!-- 설정 -->
     <section id="tab-settings" class="tab" data-tab="settings" hidden>
-      <div class="section-head first"><h2>화면</h2></div>
+      <div class="section-head first"><h2>계정</h2></div>
+      <div class="panel" id="accountBox"></div>
+
+      <div class="section-head"><h2>화면</h2></div>
       <div class="panel form">
         <label>화면 모드
           <select id="themePref">
