@@ -228,7 +228,7 @@ function renderAll() {
   renderResults();
 }
 
-const mapTab = initMapTab({ toast, copyText, esc, download, fmtTime });
+const mapTab = initMapTab({ toast, copyText, esc, download, fmtTime, pullShared: () => share.pullNow(true) });
 const share = initShare({ toast, esc, onChange: () => renderResults() });
 const auth = initAuth({ esc, toast, onLogin: () => { share.pullNow(true); renderSettings(); } });
 

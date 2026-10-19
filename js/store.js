@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS = {
   shareMode: 'ask', // ask: 콜마다 물어보기 | auto: 자동 공유 | off: 보내지 않기(받기만)
   shareServer: '', // 비우면 이 화면을 내려준 서버
   geoConsent: false, // 주소를 외부 지도 검색 서버로 보내 좌표로 바꿔도 되는지 (처음엔 꺼짐)
-  mapMode: 'both', // both | own: 공유 데이터를 추천에 쓸지
+  showShared: false, // 다른 기사님이 공유한 콜(과 테스트·파일 데이터)을 지도·추천에 보여줄지. 꺼져 있으면 내 콜만 씁니다
 };
 
 function emptyState() {

@@ -54,6 +54,7 @@ export function initShare({ toast, esc, onChange }) {
 
   async function pullNow(force = false) {
     if (pulling) return;
+    if (!settings().showShared) return; // 공유 콜 보기가 꺼져 있으면 받아오지 않아요 (읽기 횟수도 아낌)
     if (!force && Date.now() - status.lastPull < PULL_EVERY_MS) return;
     pulling = true;
     try {
@@ -121,7 +122,9 @@ export function initShare({ toast, esc, onChange }) {
     const todo = undecided().length;
     const mins = status.lastPull ? Math.max(0, Math.round((Date.now() - status.lastPull) / 60_000)) : null;
     const line =
-      status.state === 'error'
+      !settings().showShared
+        ? '<div class="muted small">공유 콜 보기가 꺼져 있어요 (지도에서 켜기)</div>'
+        : status.state === 'error'
         ? `<div class="bad small">${esc(status.msg)}</div>`
         : status.state === 'ok'
           ? `<div class="ok small">● 연결됨 · 받은 콜 ${status.others}건${mins != null ? ` (${mins === 0 ? '방금' : `${mins}분 전`})` : ''}</div>`

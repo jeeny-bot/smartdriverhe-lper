@@ -8,6 +8,7 @@ import { haversineKm, roughPlace } from './core/geo.js';
 import { shortLabel } from './core/address.js';
 import { buildPack, parsePack } from './core/share.js';
 import { makeDemoPoints } from './core/demo.js';
+import { loginRequired } from './auth-ui.js';
 
 const $ = (sel) => document.querySelector(sel);
 const abs = (p) => new URL(p, document.baseURI).href;
@@ -18,7 +19,7 @@ const LEVEL = {
   unknown: { text: '판단 불가', cls: 'muted', tip: '데이터가 더 필요해요' },
 };
 
-export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
+export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared }) {
   let L = null; // Leaflet
   let map = null;
   let layers = null;
@@ -30,13 +31,23 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
   let fitted = false;
   let whenHours = 0; // 추천 시간대: 지금 / 1~3시간 뒤
 
+  // ---------- 공유 콜 보기 버튼 ----------
+  function syncSharedBtn() {
+    const b = $('#sharedBtn');
+    if (!b) return;
+    const on = Boolean(settings().showShared);
+    b.setAttribute('aria-pressed', String(on));
+    b.classList.toggle('on', on);
+    b.querySelector('span').textContent = '공유 콜';
+  }
+
   // ---------- 데이터 ----------
   const settings = () => store.state.settings;
   function demandPoints() {
     const own = store.state.calls
       .filter((c) => c.startPos)
       .map((c) => ({ lat: c.startPos.lat, lng: c.startPos.lng, t: c.at, label: c.startAddr ? shortLabel(c.startAddr) : null, src: 'own' }));
-    const shared = settings().mapMode === 'own' ? [] : store.state.sharedPoints.filter((p) => p.k === 's');
+    const shared = settings().showShared ? store.state.sharedPoints.filter((p) => p.k === 's') : [];
     return [...own, ...shared];
   }
   const targetTime = () => Date.now() + whenHours * 3_600_000;
@@ -276,6 +287,20 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
     const el = e.target.closest('[data-action^="map-"]');
     if (!el) return;
     switch (el.dataset.action) {
+      case 'map-shared': {
+        if (!settings().showShared && loginRequired()) {
+          toast('로그인한 뒤에 공유 콜을 볼 수 있어요');
+          break;
+        }
+        const on = !settings().showShared;
+        store.setSettings({ showShared: on });
+        syncSharedBtn();
+        if (on) pullShared?.();
+        renderMap();
+        if (analysis) analyzePoint(analysis.pos, { label: analysis.label, startLabel: analysis.startLabel });
+        toast(on ? '공유된 콜 지역을 함께 보여줘요' : '내 콜 지역만 보여줘요');
+        break;
+      }
       case 'map-when':
         whenHours = Number(el.dataset.v);
         document.querySelectorAll('.seg').forEach((b) => b.classList.toggle('on', b === el));
@@ -364,9 +389,7 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
   document.addEventListener('change', (e) => {
     const t = e.target;
     if (t.id === 'mapShowPts') renderMap();
-    else if (t.id === 'mapMode') {
-      store.setSettings({ mapMode: t.checked ? 'both' : 'own' });
-    } else if (t.id === 'geocoder') store.setSettings({ geocoder: t.value });
+    else if (t.id === 'geocoder') store.setSettings({ geocoder: t.value });
     else if (t.id === 'kakaoKey') store.setSettings({ kakaoKey: t.value.trim() });
     else if (t.id === 'taxiUrl') store.setSettings({ taxiUrl: t.value.trim() });
     else if (t.id === 'geoConsentBox') {
@@ -387,7 +410,7 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime }) {
 
   return {
     async onShow() {
-      $('#mapMode').checked = settings().mapMode !== 'own';
+      syncSharedBtn();
       try {
         await ensureMap();
         setTimeout(() => {

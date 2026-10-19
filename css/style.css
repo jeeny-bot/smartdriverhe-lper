@@ -381,3 +381,7 @@ body.locked { overflow: hidden; }
 .acct .who { flex: 1; min-width: 0; display: grid; }
 .acct .who b, .acct .who small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .acct .who small { color: var(--muted); font-size: 13px; }
+button.chip.toggle { cursor: pointer; min-height: 36px; font-family: inherit; }
+button.chip.toggle.on { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
+.map-under .btn, .map-under .chip, .map-under .chip-check { white-space: nowrap; }
+.map-under .row { flex-wrap: wrap; justify-content: flex-end; }

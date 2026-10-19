@@ -102,7 +102,8 @@
         <span id="mapStatus" class="chip"></span>
         <span class="row gap">
           <button class="btn ghost small" data-action="map-set-center"><svg class="ico sm" aria-hidden="true"><use href="#i-map" /></svg>여기를 내 위치로</button>
-          <label class="chip-check"><input id="mapShowPts" type="checkbox" /><span>콜 점 보기</span></label>
+          <button id="sharedBtn" class="chip toggle" data-action="map-shared" aria-pressed="false"><svg class="ico sm" aria-hidden="true"><use href="#i-share" /></svg><span>공유 콜</span></button>
+          <label class="chip-check"><input id="mapShowPts" type="checkbox" /><span>콜 점</span></label>
         </span>
       </div>
       <p id="mapHint" class="hintchip" hidden></p>
@@ -118,7 +119,6 @@
       <div class="section-head"><h2>콜 위치 데이터</h2></div>
       <div class="panel form">
         <div id="mapData" class="small"></div>
-        <label class="switch"><input id="mapMode" type="checkbox" /><span>공유·테스트 데이터 포함</span></label>
         <button class="btn" data-action="map-regeo">주소 다시 변환</button>
         <details>
           <summary class="small">파일로 주고받기</summary>
