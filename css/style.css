@@ -385,3 +385,40 @@ button.chip.toggle { cursor: pointer; min-height: 36px; font-family: inherit; }
 button.chip.toggle.on { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
 .map-under .btn, .map-under .chip, .map-under .chip-check { white-space: nowrap; }
 .map-under .row { flex-wrap: wrap; justify-content: flex-end; }
+
+/* ---------- 이메일 가입 폼 ---------- */
+.seg-row { display: flex; gap: 6px; padding: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); width: 100%; }
+.seg-row .seg { flex: 1; }
+.gate-form { display: grid; gap: 10px; width: 100%; margin-top: 14px; text-align: left; }
+.gate-form input[type='text'], .gate-form input[type='email'], .gate-form input[type='password'] { width: 100%; }
+.gate-form [hidden] { display: none; }
+.gate-form .btn.primary { min-height: 48px; }
+.gate-or { display: flex; align-items: center; gap: 10px; width: 100%; margin: 14px 0 4px; color: var(--faint); font-size: 13px; }
+.gate-or::before, .gate-or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.gate-or[hidden], .gate-btn[hidden] { display: none; }
+.gate-msg.ok { color: var(--money); }
+.gate { overflow-y: auto; }
+#verifyBanner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#verifyBanner[hidden] { display: none; }
+#verifyBanner span { flex: 1 1 200px; }
+
+/* ---------- 홈: 도착지 한 번에 확인 ---------- */
+.check { display: grid; gap: 10px; margin-bottom: 16px; }
+.check-form { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; box-shadow: var(--shadow); }
+.check-form:focus-within { border-color: var(--amber); }
+.check-form .ico { flex: none; color: var(--amber-text); }
+.check-form input { flex: 1; min-width: 0; min-height: 44px; border: 0; background: transparent; padding: 0 4px; box-shadow: none; }
+.check-form input:focus-visible { outline: none; }
+.check-form .btn { min-height: 44px; border-radius: 999px; padding: 0 20px; }
+.chips .chip.pick { cursor: pointer; font-family: inherit; }
+.chips .chip.pick:hover { color: var(--text); border-color: var(--amber); }
+#checkResult:empty { display: none; }
+#checkResult .analysis { margin-top: 0; }
+.sign.skel { animation: pulse 1s ease-in-out infinite alternate; }
+@keyframes pulse { to { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .sign.skel { animation: none; } }
+
+/* 요금 입력(순수익 판정) */
+.check-form #checkFare { flex: none; width: 76px; min-width: 0; text-align: right; border-left: 1px solid var(--line); border-radius: 0; padding: 0 8px; font-variant-numeric: tabular-nums; }
+.check-form #checkFare::placeholder { color: var(--faint); }
+.fact.warn { color: var(--danger); }

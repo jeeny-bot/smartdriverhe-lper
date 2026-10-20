@@ -5,6 +5,7 @@ import { recognize, hashFile, setProgressListener } from './ocr.js';
 import { initMapTab } from './map-tab.js';
 import { initShare } from './share-ui.js';
 import { initAuth } from './auth-ui.js';
+import { shortLabel } from './core/address.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -221,6 +222,7 @@ function renderSettings() {
 }
 
 function renderAll() {
+  renderChips();
   $('#storageWarn').hidden = store.persistent;
   renderHome();
   if (!$('#tab-journal').hidden) renderJournal();
@@ -229,6 +231,76 @@ function renderAll() {
 }
 
 const mapTab = initMapTab({ toast, copyText, esc, download, fmtTime, pullShared: () => share.pullNow(true) });
+// ---------- 홈: 도착지 한 번에 확인 ----------
+let lastCheck = null;
+let lastQuery = '';
+
+function renderChips() {
+  const seen = new Set();
+  const chips = [];
+  for (const c of [...store.state.calls].sort((a, b) => b.at - a.at)) {
+    const q = (c.endAddr ?? '').trim();
+    const label = q ? shortLabel(q) : '';
+    if (!label || seen.has(label)) continue;
+    seen.add(label);
+    chips.push(`<button type="button" class="chip pick" data-action="check-pick" data-q="${esc(q)}">${esc(label)}</button>`);
+    if (chips.length >= 6) break;
+  }
+  $('#checkChips').innerHTML = chips.join('');
+}
+
+function checkHtml(r) {
+  const box = (inner) => `<div class="checkcard analysis">${inner}</div>`;
+  if (r.error === 'consent')
+    return box('<div class="where"><span>주소를 좌표로 바꿀까요?</span></div><p class="small muted">주소 글자만 지도 검색 서버로 보내요. 이름·전화번호는 보내지 않아요.</p><button class="btn primary small" data-action="check-consent">동의하고 확인</button>');
+  if (r.error === 'notfound') return box('<div class="where"><span>찾지 못했어요</span></div><p class="small muted">동 이름까지 적어 보세요. 예) 분당 정자동</p>');
+  if (r.error === 'network') return box(`<div class="where"><span>연결에 실패했어요</span></div><p class="small muted">${esc(r.message ?? '인터넷을 확인해 주세요')}</p>`);
+  const lv = r.level;
+  const exit = r.risk.exit;
+  const j = r.judge;
+  const won = (n) => `${Math.round(n).toLocaleString('ko-KR')}원`;
+  const facts = [
+    j
+      ? `<span class="fact">대기 ${j.waitBasis === 'measured' ? `${j.waitMin}분 · 실측 ${j.waitSamples}건` : `약 ${j.waitMin}분 · 추정`}</span>`
+      : r.wait
+        ? `<span class="fact">평균 대기 ${r.wait.minutes}분 · 실측 ${r.wait.n}건</span>`
+        : '',
+    j && j.returnCost ? `<span class="fact warn">귀환 ${won(j.returnCost)}</span>` : '',
+    j ? `<span class="fact">${j.benchmarkBasis === 'own' ? '내 평균' : '기본 기준'} ${won(j.benchmark)}/시</span>` : '',
+    j && r.risk.level !== 'unknown' ? `<span class="fact">${lv.text}</span>` : '',
+    !j && r.risk.ratio != null ? `<span class="fact">콜밭 대비 ${Math.round(r.risk.ratio * 100)}%</span>` : '',
+    !j && r.risk.nearCount ? `<span class="fact">주변 ${r.risk.nearCount}건</span>` : '',
+    `<span class="fact">데이터 ${r.dataCount}건</span>`,
+  ].join('');
+  const VERDICT = { go: ['잡아요', 'hot'], ok: ['보통', ''], pass: ['패스', 'remote'] };
+  const sign = j
+    ? `<div class="sign ${VERDICT[j.verdict][1]}"><b>${VERDICT[j.verdict][0]}</b><small>시간당 약 ${won(j.hourly)}</small></div>`
+    : `<div class="sign ${r.risk.level}"><b>${lv.text}</b><small>${lv.tip}</small></div>`;
+  return box(`
+    <div class="where"><span>${esc(r.label)}</span>${j ? `<span class="muted small">요금 ${won(j.net + j.fee)}</span>` : ''}</div>
+    ${sign}
+    <div class="facts">${facts}</div>
+    ${exit ? `<a class="exitrow" href="${r.exitNav}" target="_blank" rel="noopener"><svg class="ico sm" aria-hidden="true"><use href="#i-map" /></svg><span>가까운 콜밭 <b>${esc(exit.label ?? '추천 지점')}</b></span><span class="d">${exit.distKm.toFixed(1)}km</span></a>` : ''}
+    ${r.risk.level === 'unknown' && !r.shared ? '<button class="btn small" data-action="check-share"><svg class="ico sm" aria-hidden="true"><use href="#i-share" /></svg>공유 콜 켜고 다시 보기</button>' : ''}
+    <div class="acts">
+      <button class="btn small" data-action="check-together">함께가기 복사</button>
+      <button class="btn small" data-action="map-taxi">택시 호출</button>
+      <button class="btn small" data-action="check-map">지도</button>
+    </div>`);
+}
+
+async function runCheck(q) {
+  q = String(q ?? '').trim();
+  if (!q) return;
+  lastQuery = q;
+  $('#checkInput').value = q;
+  $('#checkResult').innerHTML = '<div class="checkcard analysis"><div class="sign unknown skel"><b>확인 중…</b></div></div>';
+  const fare = Number(String($('#checkFare').value).replace(/[^\d]/g, '')) || 0;
+  const r = await mapTab.quickCheck(q, { fare });
+  lastCheck = r.error ? null : r;
+  $('#checkResult').innerHTML = checkHtml(r);
+}
+
 const share = initShare({ toast, esc, onChange: () => renderResults() });
 const auth = initAuth({ esc, toast, onLogin: () => { share.pullNow(true); renderSettings(); } });
 
@@ -247,6 +319,10 @@ function showTab(name) {
   renderAll();
   window.scrollTo(0, 0);
 }
+$('#checkForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  runCheck($('#checkInput').value);
+});
 window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
 
 // ---------- 콜카드 이미지 처리 ----------
@@ -477,6 +553,34 @@ document.addEventListener('click', async (e) => {
     case 'toggle-work':
       store.toggleWork();
       break;
+    case 'check-pick':
+      runCheck(el.dataset.q);
+      break;
+    case 'check-consent':
+      store.setSettings({ geoConsent: true });
+      runCheck(lastQuery);
+      break;
+    case 'check-share':
+      store.setSettings({ showShared: true });
+      share.pullNow(true).finally(() => runCheck(lastQuery));
+      break;
+    case 'check-map':
+      if (lastCheck) mapTab.showOnMap(lastCheck);
+      break;
+    case 'check-together': {
+      if (!lastCheck) break;
+      const text = lastCheck.together;
+      if (navigator.share) {
+        try {
+          await navigator.share({ text });
+          break;
+        } catch {
+          /* 취소하면 복사 */
+        }
+      }
+      toast((await copyText(text)) ? '함께가기 문구를 복사했어요' : '복사하지 못했어요');
+      break;
+    }
     case 'add-expense':
       openExpenseDialog();
       break;

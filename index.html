@@ -82,6 +82,17 @@
   <main>
     <!-- 홈 -->
     <section id="tab-home" class="tab" data-tab="home">
+      <section class="check" id="quickCheck" aria-label="도착지 확인">
+        <form id="checkForm" class="check-form" novalidate>
+          <svg class="ico" aria-hidden="true"><use href="#i-map" /></svg>
+          <input id="checkInput" type="search" placeholder="도착지" enterkeyhint="search" autocomplete="off" aria-label="도착지" />
+          <input id="checkFare" type="text" inputmode="numeric" placeholder="요금" autocomplete="off" aria-label="요금(원)" />
+          <button type="submit" class="btn primary">확인</button>
+        </form>
+        <div id="checkChips" class="chips"></div>
+        <div id="checkResult" aria-live="polite"></div>
+      </section>
+
       <div class="meter" id="todayCard"></div>
 
       <div id="drop" class="cta" tabindex="0" role="button" aria-label="콜카드 이미지 올리기">

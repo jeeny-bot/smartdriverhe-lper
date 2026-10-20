@@ -5,6 +5,7 @@ import { store } from './store.js';
 import { sharePush, sharePull, backendOf, firebase } from './share-sync.js';
 import { toSharePoint, previewOf, shareability, MAX_AGE_DAYS } from './core/share.js';
 import { roughPlace } from './core/geo.js';
+import { computeWaits, shareableWait } from './core/wait.js';
 
 const $ = (sel) => document.querySelector(sel);
 const PULL_EVERY_MS = 5 * 60_000;
@@ -39,7 +40,8 @@ export function initShare({ toast, esc, onChange }) {
       const cid = store.ensureCid();
       for (let i = 0; i < ready.length; i += 200) {
         const batch = ready.slice(i, i + 200);
-        await sharePush(settings(), cid, batch.map(toSharePoint));
+        const waits = new Map(computeWaits(store.state.calls).map((w) => [w.id, w]));
+        await sharePush(settings(), cid, batch.map((c) => toSharePoint(c, shareableWait(waits.get(c.id)))));
         for (const c of batch) store.updateCall(c.id, { shareState: 'shared' });
       }
       status = { ...status, state: 'ok', msg: '' };
@@ -98,7 +100,7 @@ export function initShare({ toast, esc, onChange }) {
     return `<div class="sharebox">
       <strong>이 콜 위치를 공유할까요?</strong>
       <div class="small"><svg class="ico sm" aria-hidden="true"><use href="#i-map" /></svg> <b>${esc(pv.place)}</b> 부근 · ${esc(pv.when)}</div>
-      <div class="muted small"><svg class="ico sm" aria-hidden="true"><use href="#i-lock" /></svg> 요금·이름·연락처·이미지는 제외</div>
+      <div class="muted small"><svg class="ico sm" aria-hidden="true"><use href="#i-lock" /></svg> 요금·이름·연락처·도착지·이미지는 제외</div>
       <div class="row gap wrap">
         <button class="btn primary small" data-action="share-call" data-id="${rec.id}">공유하기</button>
         <button class="btn small" data-action="share-skip" data-id="${rec.id}">이번엔 안 함</button>
@@ -196,7 +198,7 @@ export function initShare({ toast, esc, onChange }) {
         break;
       case 'share-all':
         if (!ensureGeoConsent()) return;
-        if (confirm(`내 콜 ${undecided().length}건의 출발지(대략 위치)와 시각(시 단위)을 공유할까요?\n요금·이름·전화번호·상세 주소·이미지는 공유되지 않아요.`)) queueCalls(undecided().map((c) => c.id));
+        if (confirm(`내 콜 ${undecided().length}건의 출발지(대략 위치)와 시각(시 단위)을 공유할까요?\n요금·이름·전화번호·도착지·상세 주소·이미지는 공유되지 않아요. (직전 대기시간 분만 함께 올라가요)`)) queueCalls(undecided().map((c) => c.id));
         break;
       case 'share-refresh':
         pullNow(true);

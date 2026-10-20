@@ -25,6 +25,14 @@ export function explainError(status, body, where) {
   const msg = String(e.message ?? '');
   const st = String(e.status ?? '');
   const text = `${msg} ${st} ${JSON.stringify(e.details ?? '')}`;
+  if (String(where).startsWith('이메일')) {
+    if (/EMAIL_EXISTS/.test(text)) return new ShareError('이미 가입된 이메일이에요', { code: 'exists', hint: '로그인하거나 "비밀번호를 잊었어요"를 눌러 보세요' });
+    if (/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND/.test(text)) return new ShareError('이메일 또는 비밀번호가 맞지 않아요', { code: 'cred' });
+    if (/WEAK_PASSWORD/.test(text)) return new ShareError('비밀번호가 너무 약해요', { code: 'weak', hint: '6자 이상으로 만드세요' });
+    if (/INVALID_EMAIL|MISSING_EMAIL/.test(text)) return new ShareError('이메일 주소를 확인해 주세요', { code: 'email' });
+    if (/TOO_MANY_ATTEMPTS/.test(text)) return new ShareError('시도가 너무 많아요', { code: 'many', hint: '잠시 뒤에 다시 해 보세요' });
+    if (/OPERATION_NOT_ALLOWED/.test(text)) return new ShareError('이메일 가입이 꺼져 있어요', { code: 'email-off', hint: '콘솔 → Authentication → 로그인 방법 → "이메일/비밀번호"를 사용 설정' });
+  }
   if (/API key not valid|API_KEY_INVALID|INVALID_API_KEY/i.test(text))
     return new ShareError('apiKey 가 올바르지 않아요', { code: 'apikey', hint: 'js/firebase-config.js 의 apiKey 를 Firebase 콘솔에서 다시 복사하세요' });
   if (/OPERATION_NOT_ALLOWED|ADMIN_ONLY_OPERATION/i.test(text))
@@ -107,13 +115,55 @@ export function createFirebaseShare({ config, storage, endpoints = {}, now = () 
       refreshToken: b.refreshToken,
       exp: now() + Number(b.expiresIn ?? 3600) * 1000,
       provider: 'google.com',
+      emailVerified: true,
       profile: { email: b.email ?? '', name: b.displayName ?? '', photo: b.photoUrl ?? '' },
     };
     storage.set(tok);
     return tok;
   }
+  // ---------- 이메일 가입·로그인 ----------
+  const post = (path, payload, where) =>
+    request(`${ep.auth}/${path}?key=${encodeURIComponent(config.apiKey)}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) }, where);
+  const keep = (b, extra) => {
+    const tok = { uid: b.localId, idToken: b.idToken, refreshToken: b.refreshToken, exp: now() + Number(b.expiresIn ?? 3600) * 1000, provider: 'password', emailVerified: false, ...extra };
+    storage.set(tok);
+    return tok;
+  };
+  async function sendVerification() {
+    const tok = saved();
+    await post('accounts:sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: tok.idToken }, '이메일 인증 메일');
+  }
+  /** 이름·이메일·비밀번호로 가입하고, 본인 확인용 인증 메일을 보냅니다 */
+  async function signUpEmail({ email, password, name }) {
+    if (!configured()) throw new ShareError('Firebase 설정이 비어 있어요', { code: 'noconfig' });
+    const b = await post('accounts:signUp', { email, password, returnSecureToken: true }, '이메일 가입');
+    keep(b, { profile: { email: b.email ?? email, name: name ?? '', photo: '' } });
+    if (name) await post('accounts:update', { idToken: b.idToken, displayName: name, returnSecureToken: false }, '이메일 가입');
+    await sendVerification();
+    return account();
+  }
+  async function signInEmail({ email, password }) {
+    if (!configured()) throw new ShareError('Firebase 설정이 비어 있어요', { code: 'noconfig' });
+    const b = await post('accounts:signInWithPassword', { email, password, returnSecureToken: true }, '이메일 로그인');
+    keep(b, { profile: { email: b.email ?? email, name: b.displayName ?? '', photo: '' } });
+    await checkVerified();
+    return account();
+  }
+  const sendPasswordReset = (email) => post('accounts:sendOobCode', { requestType: 'PASSWORD_RESET', email }, '이메일 비밀번호 재설정');
+  /** 메일의 인증 링크를 눌렀는지 확인하고, 눌렀다면 로그인 정보를 새로 받아 둡니다 */
+  async function checkVerified() {
+    const tok = saved();
+    if (tok.provider !== 'password') return true;
+    if (tok.emailVerified) return true;
+    const fresh = tok.exp - now() > 60_000 ? tok : await refresh(tok);
+    const b = await post('accounts:lookup', { idToken: fresh.idToken }, '이메일 인증 확인');
+    if (!b.users?.[0]?.emailVerified) return false;
+    const renewed = await refresh({ ...fresh });
+    storage.set({ ...renewed, emailVerified: true });
+    return true;
+  }
   const isLoggedIn = () => Boolean(saved().refreshToken && saved().provider);
-  const account = () => (isLoggedIn() ? { uid: saved().uid, ...(saved().profile ?? {}) } : null);
+  const account = () => (isLoggedIn() ? { uid: saved().uid, provider: saved().provider, verified: saved().emailVerified !== false, ...(saved().profile ?? {}) } : null);
   const signOut = () => storage.set(null);
 
   async function refresh(tok) {
@@ -129,7 +179,8 @@ export function createFirebaseShare({ config, storage, endpoints = {}, now = () 
   async function auth() {
     if (!configured()) throw new ShareError('Firebase 설정이 비어 있어요', { code: 'noconfig', hint: 'js/firebase-config.js 에 apiKey 와 projectId 를 넣으세요' });
     const tok = saved();
-    if (!anonymous && !tok.provider) throw new ShareError('로그인이 필요해요', { code: 'login', hint: '설정에서 구글로 로그인하세요' });
+    if (!anonymous && !tok.provider) throw new ShareError('로그인이 필요해요', { code: 'login', hint: '설정에서 로그인하세요' });
+    if (!anonymous && tok.provider === 'password' && tok.emailVerified === false) throw new ShareError('이메일 인증이 필요해요', { code: 'verify', hint: '메일의 인증 링크를 누른 뒤 설정 → 계정에서 "인증했어요"를 눌러 주세요' });
     if (tok.idToken && tok.exp - now() > 60_000) return tok;
     if (tok.refreshToken) {
       try {
@@ -151,6 +202,7 @@ export function createFirebaseShare({ config, storage, endpoints = {}, now = () 
         t: { integerValue: String(p.t) },
         k: { stringValue: 's' },
         u: { stringValue: tok.uid },
+        ...(Number.isInteger(p.w) ? { w: { integerValue: String(p.w) } } : {}),
       },
     },
     updateTransforms: [{ fieldPath: 'up', setToServerValue: 'REQUEST_TIME' }],
@@ -221,6 +273,8 @@ export function createFirebaseShare({ config, storage, endpoints = {}, now = () 
         if (up && up > last) last = up;
         if (f.u?.stringValue === tok.uid) continue; // 내가 올린 건 이미 내 기록에 있어요
         const p = { lat: num(f.lat), lng: num(f.lng), t: num(f.t), k: f.k?.stringValue, id: d.name.split('/').pop() };
+        const w = num(f.w);
+        if (Number.isFinite(w)) p.w = w;
         if (Number.isFinite(p.lat) && Number.isFinite(p.lng) && Number.isFinite(p.t) && p.k === 's') out.push(p);
       }
       if (docs.length < PAGE || last === cur) {
@@ -245,5 +299,5 @@ export function createFirebaseShare({ config, storage, endpoints = {}, now = () 
     return { uid: tok.uid };
   }
 
-  return { configured, push, pull, selfTest, signInWithGoogle, signOut, account, isLoggedIn, uid: () => saved().uid ?? null };
+  return { configured, push, pull, selfTest, signInWithGoogle, signUpEmail, signInEmail, sendVerification, sendPasswordReset, checkVerified, signOut, account, isLoggedIn, uid: () => saved().uid ?? null };
 }

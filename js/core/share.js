@@ -40,9 +40,12 @@ export function parsePack(text, { max = 20000 } = {}) {
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 /** 서버로 올릴 점 하나 (출발지만). 좌표는 서버에서도 한 번 더 뭉갭니다. */
-export function toSharePoint(call) {
+export function toSharePoint(call, waitMin = null) {
   const r = roundPos(call.startPos);
-  return { lat: r.lat, lng: r.lng, t: Math.floor(call.at / HOUR) * HOUR, k: 's' };
+  const p = { lat: r.lat, lng: r.lng, t: Math.floor(call.at / HOUR) * HOUR, k: 's' };
+  // 직전 대기시간(분, 5분 단위). 위치는 위의 출발지 그대로이고, 도착지는 올리지 않아요.
+  if (Number.isInteger(waitMin) && waitMin >= 0 && waitMin <= 180) p.w = waitMin;
+  return p;
 }
 
 /** 공유 전에 사용자에게 보여줄 "정확히 무엇이 나가는지" 문구 재료 */

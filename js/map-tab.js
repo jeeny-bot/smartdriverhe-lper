@@ -9,6 +9,9 @@ import { shortLabel } from './core/address.js';
 import { buildPack, parsePack } from './core/share.js';
 import { makeDemoPoints } from './core/demo.js';
 import { loginRequired } from './auth-ui.js';
+import { computeWaits, expectedWait } from './core/wait.js';
+import { judgeCall, ownBenchmark } from './core/judge.js';
+import { summarize } from './core/ledger.js';
 
 const $ = (sel) => document.querySelector(sel);
 const abs = (p) => new URL(p, document.baseURI).href;
@@ -208,8 +211,7 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
     box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
-  function togetherText() {
-    const a = analysis;
+  function togetherText(a = analysis) {
     const dest = a.label !== '선택한 지점' ? roughPlace(a.label) || a.label : `${a.pos.lat.toFixed(3)}, ${a.pos.lng.toFixed(3)} 부근`;
     const from = a.startLabel ? roughPlace(a.startLabel) || a.startLabel : '현 위치';
     const tag = LEVEL[a.risk.level].text;
@@ -428,6 +430,44 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
     },
     renderSettingsBox,
     /** 일지의 콜 도착지를 지도에서 분석 */
+    /** 홈의 "도착지 확인": 주소 글자 → 좌표 → 콜밭/오지 판정 (지도는 안 그려도 됨) */
+    async quickCheck(text, { fare = 0 } = {}) {
+      const q = String(text ?? '').trim();
+      if (!q) return { error: 'empty' };
+      if (!settings().geoConsent) return { error: 'consent' };
+      let pos;
+      try {
+        pos = await geocode(q, settings(), { rawFallback: true });
+      } catch (e) {
+        return { error: 'network', message: e.message };
+      }
+      if (!pos) return { error: 'notfound' };
+      const risk = landingRisk(pos, demandPoints(), { now: Date.now(), target: Date.now() });
+      const a = { pos, label: q, startLabel: null, risk };
+      const now = Date.now();
+      const wait = expectedWait(pos, {
+        own: computeWaits(store.state.calls).filter((w) => w.endPos),
+        shared: settings().showShared ? store.state.sharedPoints.filter((p) => Number.isFinite(p.w)) : [],
+        now,
+        target: now,
+      });
+      let judge = null;
+      if (fare > 0) {
+        const month = summarize(store.state.calls, store.state.expenses, store.state.sessions, { start: now - 30 * 86_400_000, end: now + 1 }, now);
+        judge = judgeCall({ fare, feeRate: settings().defaultFeeRate, level: risk.level, exitKm: risk.exit?.distKm ?? null, wait, benchmark: ownBenchmark(month) });
+      }
+      return { wait, judge, fare, label: q, pos, risk, level: LEVEL[risk.level], dataCount: demandPoints().length, nav: navLink(q, pos), exitNav: risk.exit ? navLink(risk.exit.label ?? '콜밭', risk.exit) : null, together: togetherText(a), shared: Boolean(settings().showShared) };
+    },
+    /** 홈에서 확인한 도착지를 지도 탭에서 크게 보기 */
+    async showOnMap(r) {
+      location.hash = '#map';
+      await ensureMap();
+      setTimeout(() => {
+        map.invalidateSize();
+        map.setView([r.pos.lat, r.pos.lng], 12);
+        analyzePoint(r.pos, { label: r.label });
+      }, 50);
+    },
     async analyzeCall(id) {
       const c = store.state.calls.find((x) => x.id === id);
       if (!c?.endPos) return toast(c?.endAddr ? '도착지 좌표가 아직 없어요. 지도 탭에서 주소 변환이 끝난 뒤 다시 눌러 주세요' : '도착지가 비어 있어요');

@@ -171,7 +171,7 @@ export const store = {
     for (const p of points) {
       if (p.id && have.has(p.id)) continue;
       have.add(p.id);
-      state.sharedPoints.push({ lat: p.lat, lng: p.lng, t: p.t, k: p.k, id: p.id, src });
+      state.sharedPoints.push({ lat: p.lat, lng: p.lng, t: p.t, k: p.k, id: p.id, src, ...(Number.isFinite(p.w) ? { w: p.w } : {}) });
     }
     const min = now - maxAgeDays * 86_400_000;
     state.sharedPoints = state.sharedPoints.filter((p) => p.src !== src || p.t >= min);
@@ -185,7 +185,7 @@ export const store = {
   /** 한 출처(src)의 공유 점을 통째로 바꿉니다 (서버에서 새로 받을 때) */
   replaceShared(src, points) {
     state.sharedPoints = state.sharedPoints.filter((p) => p.src !== src);
-    for (const p of points) state.sharedPoints.push({ lat: p.lat, lng: p.lng, t: p.t, k: p.k, src });
+    for (const p of points) state.sharedPoints.push({ lat: p.lat, lng: p.lng, t: p.t, k: p.k, src, ...(Number.isFinite(p.w) ? { w: p.w } : {}) });
     commit();
   },
   removeSharedBySource(src) {
