@@ -147,3 +147,33 @@ firebase.json           호스팅·규칙 배포 설정
 - **수수료율 기본값 20%는 임의의 초기값**입니다. 설정에서 본인 수수료율로 바꾸세요.
 - 영업일은 자정이 아니라 새벽 6시에 바뀝니다(설정에서 변경).
 - 콜 시각은 카드에 적힌 날짜·시간을 쓰고, 없으면 이미지 파일 시각을 씁니다. 틀리면 수정 창에서 고칠 수 있습니다.
+
+
+## 구글 로그인 켜기
+
+로그인을 켜면 처음 열 때 구글 로그인 화면이 나오고, 공유는 로그인한 사용자만 쓸 수 있어요. (이메일·이름은 이 기기와 구글에만 있고, 공유 데이터에는 들어가지 않아요)
+
+1. Firebase 콘솔 → Authentication → 로그인 방법 → **Google** → 사용 설정, 지원 이메일 선택 후 저장.
+2. 다시 Google 항목을 열어 **웹 SDK 구성**의 **웹 클라이언트 ID**를 복사해요. (`...apps.googleusercontent.com`)
+3. Authentication → 설정 → **승인된 도메인**에 배포 주소(예: `smartdriverhe-lper.pages.dev`)를 추가해요.
+4. console.cloud.google.com → (같은 프로젝트) API 및 서비스 → 사용자 인증 정보 → **Web client (auto created by Google Service)** → **승인된 JavaScript 원본**에 `https://배포주소`를 추가하고 저장해요. (몇 분 걸릴 수 있어요)
+5. `js/firebase-config.js`에 `googleClientId: '복사한 웹 클라이언트 ID'` 줄을 넣어요.
+6. (선택, 로그인이 되는 걸 확인한 뒤) Firebase 콘솔 → Firestore → 규칙에 `firestore.rules`를 다시 붙여넣고 게시하면 익명 접근이 막혀요.
+
+`googleClientId`가 비어 있으면 로그인을 요구하지 않아요. 카카오·네이버 로그인은 별도 서버(Firebase Blaze 요금제의 Functions 등)가 필요해서 아직 넣지 않았어요.
+
+## 아이콘·홈 화면에 추가
+
+`icons/`에 앱 아이콘이 있고 `manifest.webmanifest`가 연결돼 있어요. 폰 브라우저 메뉴의 "홈 화면에 추가"를 하면 콜비서 아이콘으로 앱처럼 열려요.
+
+
+## 이메일 간편 가입 켜기
+
+구글 계정이 없는 사람도 가입할 수 있어요. 이름·이메일·비밀번호만 받고, Firebase가 보내는 **인증 메일의 링크를 누르면** 이메일 본인 확인이 끝나요. (문자 인증은 Firebase 결제 계정이 필요해서 넣지 않았어요)
+
+1. Firebase 콘솔 → Authentication → 로그인 방법 → **이메일/비밀번호** → 사용 설정(이메일 링크는 꺼 두기) → 저장.
+2. (선택) Authentication → 템플릿 → **이메일 주소 인증** 연필 아이콘 → 언어를 한국어로.
+3. `firestore.rules`를 Firestore 규칙에 다시 붙여넣고 게시해요. (이메일 인증을 마친 사용자만 공유를 쓰게 하는 줄이 추가됐어요)
+4. 구글 로그인 없이 이메일 가입만 쓰려면 `js/firebase-config.js`에 `requireLogin: true,` 줄을 넣어요. (`googleClientId`가 있으면 로그인 화면이 이미 켜져 있어요)
+
+가입 후 인증 전에는 앱의 일지·통계는 쓸 수 있고, 공유만 막혀요.

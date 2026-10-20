@@ -42,11 +42,33 @@
       <img class="gate-icon" src="icons/icon.svg" alt="" width="96" height="96" />
       <h1>콜비서</h1>
       <p class="gate-sub">대리기사님을 위한 콜 기록·정산·콜지도</p>
+
+      <div class="seg-row" role="tablist" aria-label="로그인 방식">
+        <button type="button" class="seg on" data-action="gate-mode" data-mode="login" role="tab">로그인</button>
+        <button type="button" class="seg" data-action="gate-mode" data-mode="signup" role="tab">간편 가입</button>
+      </div>
+
+      <form id="mailForm" class="gate-form" novalidate>
+        <input id="gName" type="text" name="name" placeholder="이름" autocomplete="name" maxlength="30" hidden />
+        <input id="gEmail" type="email" name="email" placeholder="이메일" autocomplete="email" inputmode="email" required />
+        <input id="gPass" type="password" name="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" minlength="6" required />
+        <label id="gConsent" class="switch" hidden><input id="gAgree" type="checkbox" /><span>이름·이메일 수집에 동의해요 (로그인·본인 확인용)</span></label>
+        <button type="submit" class="btn primary" id="gSubmit">로그인</button>
+        <button type="button" class="btn ghost small" id="gReset" data-action="gate-reset">비밀번호를 잊었어요</button>
+      </form>
+
+      <div class="gate-or" id="gOr"><span>또는</span></div>
       <div id="gBtn" class="gate-btn"></div>
       <p class="gate-msg" role="alert" hidden></p>
       <p class="gate-note"><svg class="ico sm" aria-hidden="true"><use href="#i-lock" /></svg>이메일은 로그인에만 쓰이고, 공유에는 들어가지 않아요</p>
     </div>
   </div>
+
+  <p id="verifyBanner" class="banner" hidden>
+    <span>메일로 보낸 인증 링크를 누르면 공유를 쓸 수 있어요</span>
+    <button class="btn small" data-action="auth-verified">인증했어요</button>
+    <button class="btn ghost small" data-action="auth-resend">메일 다시 받기</button>
+  </p>
 
   <header class="top">
     <div class="brand">
