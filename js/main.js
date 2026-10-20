@@ -6,6 +6,7 @@ import { initMapTab } from './map-tab.js';
 import { initShare } from './share-ui.js';
 import { initAuth } from './auth-ui.js';
 import { shortLabel } from './core/address.js';
+import { waitByPlace } from './core/wait.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -161,6 +162,22 @@ let month = (() => {
   return { y, m };
 })();
 
+function renderWaitRank() {
+  const rows = waitByPlace(store.state.calls);
+  if (!rows.length) {
+    $('#waitRank').innerHTML = '<div class="empty-bars">같은 동네에 2번 이상 내리면 나와요</div>';
+    return;
+  }
+  const FAST = 5;
+  const slow = rows.length > FAST + 2 ? rows.slice(-3) : [];
+  const fast = slow.length ? rows.slice(0, FAST) : rows;
+  const scale = Math.max(30, ...rows.map((r) => r.minutes));
+  const row = (r, cls) =>
+    `<div class="waitrow ${cls}"><span class="l">${esc(r.label)}</span><span class="b"><i style="width:${Math.max(4, Math.round((r.minutes / scale) * 100))}%"></i></span><span class="v">${r.minutes}<small class="muted">분</small></span><span class="n muted">${r.n}건</span></div>`;
+  $('#waitRank').innerHTML =
+    fast.map((r) => row(r, 'fast')).join('') + (slow.length ? '<div class="waitgap muted small">오래 걸린 곳</div>' + slow.map((r) => row(r, 'slow')).join('') : '');
+}
+
 function renderStats() {
   const { state } = store;
   const range = BusinessDay.monthRange(month.y, month.m, cutoff());
@@ -176,6 +193,7 @@ function renderStats() {
     <div class="centerline"></div>
     ${minor([['총수입', won(t.totalFare)], ['수수료', won(t.totalFee)], ['지출', won(t.expenses)]])}`;
 
+  renderWaitRank();
   const days = byDay(callLines(calls), expLines(exps), cutoff());
   const profitOf = new Map(days.map((d) => [d.date, d.summary.profit]));
   const last = new Date(month.y, month.m, 0).getDate();

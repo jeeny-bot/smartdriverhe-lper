@@ -8,6 +8,7 @@
 
 import { haversineKm, inKorea } from './geo.js';
 import { pointWeight } from './hotspot.js';
+import { shortLabel } from './address.js';
 
 const MIN = 60_000;
 export const WAIT = {
@@ -98,3 +99,29 @@ export function expectedWait(dest, { own = [], shared = [], now = Date.now(), ta
   return { minutes: Math.round(median(usable)), n: usable.length, ownN: usable.filter((x) => x.isOwn).length };
 }
 
+
+/**
+ * 착지 동네별 대기시간 순위 (내 일지 기준). 같은 동네가 minN 번 이상 나온 곳만, 중앙값이 짧은 순으로.
+ * @returns {Array<{label:string, minutes:number, n:number}>}
+ */
+export function waitByPlace(calls, { now = Date.now(), days = 60, minN = 2 } = {}, o = WAIT) {
+  const since = now - days * 86_400_000;
+  const byId = new Map(calls.map((c) => [c.id, c]));
+  const groups = new Map();
+  for (const w of computeWaits(calls.filter((c) => c.at >= since), o)) {
+    const addr = byId.get(w.prevId)?.endAddr;
+    const label = addr ? shortLabel(addr) : '';
+    if (!label) continue;
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(w.waitMin);
+  }
+  const mid = (arr) => {
+    const s = [...arr].sort((a, b) => a - b);
+    const h = s.length >> 1;
+    return s.length % 2 ? s[h] : Math.round((s[h - 1] + s[h]) / 2);
+  };
+  return [...groups]
+    .filter(([, v]) => v.length >= minN)
+    .map(([label, v]) => ({ label, minutes: mid(v), n: v.length }))
+    .sort((a, b) => a.minutes - b.minutes || b.n - a.n);
+}
