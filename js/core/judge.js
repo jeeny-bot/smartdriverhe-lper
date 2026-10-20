@@ -72,3 +72,34 @@ export function ownBenchmark(summary) {
   if (!summary || summary.hourlyProfit == null || summary.workedMillis < 5 * 3_600_000 || summary.count < 5) return null;
   return summary.hourlyProfit;
 }
+
+/**
+ * 판정 점검: 내 지난 콜마다 "그때 이 판정을 봤다면 뭐라고 했을까"와 "실제로는 어땠나"를 비교합니다.
+ * - 예상: 그 콜의 도착지·요금·시각으로 판정 (이 콜 자신의 대기 기록은 빼고 계산해서 정답을 미리 보지 않게 함)
+ * - 실제: 그 콜을 마친 뒤 실제로 기다린 시간으로 계산한 시간당 순수익
+ * 잡아요 ↔ 패스처럼 정반대로 어긋난 것만 "어긋남"으로 셉니다.
+ * @param {Array} calls 일지의 콜 (endPos·fare·fee 있는 것만 씀)
+ * @param {{points:Array, benchmark:number|null, now?:number, limit?:number}} ctx
+ */
+export function backtest(calls, ctx, deps) {
+  const { computeWaits, expectedWait, landingRisk } = deps;
+  const now = ctx.now ?? Date.now();
+  const waits = computeWaits(calls);
+  const nextWait = new Map(waits.map((w) => [w.prevId, w]));
+  const own = waits.filter((w) => w.endPos);
+  const rows = [];
+  const cands = calls.filter((c) => c.endPos && c.fare > 0 && nextWait.has(c.id)).sort((a, b) => b.at - a.at).slice(0, ctx.limit ?? 30);
+  for (const c of cands) {
+    const actualWait = nextWait.get(c.id).waitMin;
+    const risk = landingRisk(c.endPos, ctx.points, { now: c.at, target: c.at });
+    const wait = expectedWait(c.endPos, { own: own.filter((w) => w.prevId !== c.id), shared: ctx.shared ?? [], now: c.at, target: c.at });
+    const feeRate = c.fee != null ? (c.fee / c.fare) * 100 : ctx.feeRate ?? 20;
+    const base = { fare: c.fare, feeRate, benchmark: ctx.benchmark };
+    const guess = judgeCall({ ...base, level: risk.level, exitKm: risk.exit?.distKm ?? null, wait });
+    const real = judgeCall({ ...base, level: 'normal', wait: { minutes: actualWait, n: 1 } });
+    const opposite = (guess.verdict === 'go' && real.verdict === 'pass') || (guess.verdict === 'pass' && real.verdict === 'go');
+    rows.push({ id: c.id, label: c.endAddr ?? '', guess: guess.verdict, guessHourly: guess.hourly, guessWait: guess.waitMin, actualWait, real: real.verdict, realHourly: real.hourly, ok: !opposite, measured: guess.waitBasis === 'measured' });
+  }
+  const hit = rows.filter((r) => r.ok).length;
+  return { rows, total: rows.length, hit, miss: rows.length - hit, now };
+}

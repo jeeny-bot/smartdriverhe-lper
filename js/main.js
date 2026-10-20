@@ -162,6 +162,23 @@ let month = (() => {
   return { y, m };
 })();
 
+const VERDICT_TXT = { go: '잡아요', ok: '보통', pass: '패스' };
+function renderBacktest(r) {
+  const box = $('#backtest');
+  if (!r.total) {
+    box.innerHTML = '<p class="small muted">점검할 콜이 아직 없어요. 도착지 좌표가 있고 다음 콜이 이어진 콜이 필요해요. (콜지도 탭에서 주소 변환이 끝나야 해요)</p><button class="btn" data-action="backtest-run">다시 점검</button>';
+    return;
+  }
+  const rows = r.rows
+    .slice(0, 6)
+    .map((x) => `<div class="btrow ${x.ok ? '' : 'miss'}"><span class="l">${esc(shortLabel(x.label) || '도착지')}</span><span class="g">${VERDICT_TXT[x.guess]}</span><span class="a">${num(x.realHourly)}<small class="muted">원/시</small></span><span class="m">${x.ok ? '✓' : '✗'}</span></div>`)
+    .join('');
+  box.innerHTML = `<div class="bthead"><b>${r.hit}</b><span>/ ${r.total}건 방향이 맞았어요</span></div>
+    <div class="btcap small muted"><span>도착지</span><span>예상</span><span>실제 시간당</span><span></span></div>${rows}
+    <p class="small muted">데이터가 적으면 "추정" 기본값으로 계산돼서 어긋날 수 있어요.</p>
+    <button class="btn small" data-action="backtest-run">다시 점검</button>`;
+}
+
 function renderWaitRank() {
   const rows = waitByPlace(store.state.calls);
   if (!rows.length) {
@@ -581,6 +598,9 @@ document.addEventListener('click', async (e) => {
     case 'check-share':
       store.setSettings({ showShared: true });
       share.pullNow(true).finally(() => runCheck(lastQuery));
+      break;
+    case 'backtest-run':
+      renderBacktest(mapTab.runBacktest());
       break;
     case 'check-map':
       if (lastCheck) mapTab.showOnMap(lastCheck);

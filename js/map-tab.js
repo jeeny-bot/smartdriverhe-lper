@@ -10,7 +10,7 @@ import { buildPack, parsePack } from './core/share.js';
 import { makeDemoPoints } from './core/demo.js';
 import { loginRequired } from './auth-ui.js';
 import { computeWaits, expectedWait } from './core/wait.js';
-import { judgeCall, ownBenchmark } from './core/judge.js';
+import { judgeCall, ownBenchmark, backtest } from './core/judge.js';
 import { summarize } from './core/ledger.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -457,6 +457,22 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
         judge = judgeCall({ fare, feeRate: settings().defaultFeeRate, level: risk.level, exitKm: risk.exit?.distKm ?? null, wait, benchmark: ownBenchmark(month) });
       }
       return { wait, judge, fare, label: q, pos, risk, level: LEVEL[risk.level], dataCount: demandPoints().length, nav: navLink(q, pos), exitNav: risk.exit ? navLink(risk.exit.label ?? '콜밭', risk.exit) : null, together: togetherText(a), shared: Boolean(settings().showShared) };
+    },
+    /** 통계 탭의 "판정 점검": 내 콜에 판정을 다시 돌려 실제 결과와 비교 */
+    runBacktest() {
+      const now = Date.now();
+      const month = summarize(store.state.calls, store.state.expenses, store.state.sessions, { start: now - 30 * 86_400_000, end: now + 1 }, now);
+      return backtest(
+        store.state.calls,
+        {
+          points: demandPoints(),
+          shared: settings().showShared ? store.state.sharedPoints.filter((p) => Number.isFinite(p.w)) : [],
+          benchmark: ownBenchmark(month),
+          feeRate: settings().defaultFeeRate,
+          now,
+        },
+        { computeWaits, expectedWait, landingRisk },
+      );
     },
     /** 홈에서 확인한 도착지를 지도 탭에서 크게 보기 */
     async showOnMap(r) {

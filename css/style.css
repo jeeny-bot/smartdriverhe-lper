@@ -434,3 +434,14 @@ button.chip.toggle.on { background: var(--amber); color: var(--amber-ink); borde
 .waitrow .v { text-align: right; font: var(--num-w) 17px/1 var(--font-num); font-variant-numeric: tabular-nums; }
 .waitrow .n { text-align: right; font-size: 12px; }
 .waitgap { padding: 12px 2px 2px; }
+
+/* 판정 점검 */
+.bthead { display: flex; align-items: baseline; gap: 8px; }
+.bthead b { font: var(--num-w) 38px/1 var(--font-num); color: var(--amber-text); }
+.btcap, .btrow { display: grid; grid-template-columns: minmax(0, 1.3fr) 56px 92px 18px; gap: 8px; align-items: center; }
+.btcap { padding-top: 4px; }
+.btrow { padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.btrow .l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.btrow .a { text-align: right; font-variant-numeric: tabular-nums; }
+.btrow .m { text-align: center; color: var(--money); font-weight: 700; }
+.btrow.miss .m { color: var(--danger); }
