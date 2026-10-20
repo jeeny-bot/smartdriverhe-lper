@@ -61,6 +61,9 @@ async function kakao(query, key) {
  */
 export async function geocode(addr, settings = {}, hooks = {}) {
   const candidates = addressCandidates(addr);
+  // 직접 입력한 짧은 이름("정자동", "강남역")은 후보가 안 만들어지므로 입력 그대로도 한 번 시도합니다.
+  const raw = String(addr ?? '').trim();
+  if (hooks.rawFallback && raw && !candidates.includes(raw)) candidates.push(raw);
   const provider =
     hooks.provider ??
     (settings.geocoder === 'kakao' && settings.kakaoKey
