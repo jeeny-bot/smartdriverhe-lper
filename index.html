@@ -33,6 +33,7 @@
       <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13.5 6.4 6.6A1.5 1.5 0 0 1 7.8 5.6h8.4a1.5 1.5 0 0 1 1.4 1L20 13.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z" /><path d="M4 13.5h4.2a1 1 0 0 1 1 .8 2.9 2.9 0 0 0 5.6 0 1 1 0 0 1 1-.8H20" /></symbol>
       <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></symbol>
       <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6.5" cy="12" r="2.3" /><circle cx="17.5" cy="6.5" r="2.3" /><circle cx="17.5" cy="17.5" r="2.3" /><path d="m8.5 10.9 7-3.3M8.5 13.1l7 3.3" /></symbol>
+      <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3c.6 3 3.6 4.6 3.6 8.2A3.6 3.6 0 0 1 12 15a3.6 3.6 0 0 1-3.6-3.8c0-1.2.5-2 1.1-2.8C9.6 10.6 10.5 11 11 11c0-3-.4-5 1-8Z" /><path d="M7 15.5C6.4 19 9 21 12 21s5.6-2 5-5.5" /></symbol>
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
     </defs>
   </svg>
@@ -94,6 +95,8 @@
       </section>
 
       <div class="meter" id="todayCard"></div>
+
+      <section class="game" id="gameCard" aria-label="레벨과 오늘의 미션"></section>
 
       <div id="drop" class="cta" tabindex="0" role="button" aria-label="콜카드 이미지 올리기">
         <svg class="ico" aria-hidden="true"><use href="#i-camera" /></svg>
@@ -185,6 +188,10 @@
         <button class="btn ghost" data-action="month-next" aria-label="다음 달">›</button>
       </div>
       <div class="meter" id="monthCard"></div>
+      <div class="section-head"><h2>내 비용</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>매출 100원 중 수수료·월 프로그램비·보험료로 나가는 돈이에요. 프로그램비와 보험료는 설정의 「월 고정비」에 넣으면 반영돼요. 플랫폼 비교에는 수수료와 프로그램비만 들어가요.</p></details></div>
+      <div class="panel stack" id="costCard"></div>
+      <div class="section-head"><h2 id="badgeTitle">배지</h2></div>
+      <div class="badges" id="badgeGrid"></div>
       <div class="section-head"><h2>착지별 대기</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>최근 60일 동안 콜을 마친 뒤 다음 콜이 들어오기까지 걸린 시간이에요. 콜 시각 간격에서 운행시간을 뺀 어림값이고, 같은 동네에서 2번 이상 내린 곳만 나와요.</p></details></div>
       <div id="waitRank" class="list"></div>
       <div class="section-head"><h2>판정 점검</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>내 지난 콜에 「잡아요/패스」 판정을 다시 돌려서, 실제로 기다린 시간으로 계산한 결과와 비교해요. 도착지 좌표가 있는 콜만 쓰고, 정반대로 어긋난 것만 틀린 걸로 세요.</p></details></div>
@@ -213,6 +220,9 @@
 
       <div class="section-head"><h2>수수료율</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>콜카드에 수수료가 적혀 있으면 그 값을 쓰고, 없을 때만 아래 수수료율로 계산해요. 기본값 20%는 임의의 초기값이니 본인 수수료율로 바꿔 주세요.</p></details></div>
       <div class="panel form" id="feeForm"></div>
+
+      <div class="section-head"><h2>월 고정비</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>매달 정해진 프로그램 사용료와 보험료를 넣으면 통계에서 「실질 비용률」을 계산해요. 보험료를 지출로 따로 기록하고 있다면 여기엔 비워 두세요. (중복 계산 방지)</p></details></div>
+      <div class="panel form" id="fixedForm"></div>
 
       <div class="section-head"><h2>영업일</h2><details class="tip"><summary aria-label="설명 보기"><svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg></summary><p>자정을 넘겨 일하는 경우를 위해, 하루가 바뀌는 새벽 시각을 정해요. (0~12시)</p></details></div>
       <div class="panel form">

@@ -24,6 +24,15 @@ export function cellOf(p, cellKm) {
   const lngStep = cellKm / (KM_PER_DEG * LNG_SCALE);
   return { i: Math.floor(p.lat / latStep), j: Math.floor(p.lng / lngStep) };
 }
+/** 칸 번호 → 지도 위 사각형 경계 [[남,서],[북,동]] */
+export function cellBounds(cell, cellKm) {
+  const latStep = cellKm / KM_PER_DEG;
+  const lngStep = cellKm / (KM_PER_DEG * LNG_SCALE);
+  return [
+    [cell.i * latStep, cell.j * lngStep],
+    [(cell.i + 1) * latStep, (cell.j + 1) * lngStep],
+  ];
+}
 export const cellKey = (p, cellKm) => {
   const c = cellOf(p, cellKm);
   return `${c.i}:${c.j}`;

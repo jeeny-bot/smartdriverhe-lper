@@ -4,7 +4,8 @@
 import { store } from './store.js';
 import { geocode } from './geocode.js';
 import { recommend, landingRisk, diversify } from './core/hotspot.js';
-import { haversineKm, roughPlace } from './core/geo.js';
+import { haversineKm, roughPlace, cellBounds } from './core/geo.js';
+import { mineCells, MAP_CELL_KM } from './core/game.js';
 import { shortLabel } from './core/address.js';
 import { buildPack, parsePack } from './core/share.js';
 import { makeDemoPoints } from './core/demo.js';
@@ -84,7 +85,7 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors',
     }).addTo(map);
-    layers = { rec: L.layerGroup().addTo(map), pts: L.layerGroup().addTo(map), me: L.layerGroup().addTo(map), ana: L.layerGroup().addTo(map) };
+    layers = { mine: L.layerGroup().addTo(map), rec: L.layerGroup().addTo(map), pts: L.layerGroup().addTo(map), me: L.layerGroup().addTo(map), ana: L.layerGroup().addTo(map) };
     map.on('click', (e) => analyzePoint({ lat: e.latlng.lat, lng: e.latlng.lng }, { label: '선택한 지점' }));
     return map;
   }
@@ -92,11 +93,53 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
   // ---------- 그리기 ----------
   const heat = (ratio) => `hsl(${Math.round(55 - 55 * ratio)}, 90%, 50%)`; // 노랑 → 빨강
 
+  // ---------- 숫자 애니메이션 ----------
+  // 지도 탭에 들어올 때 0부터 세어 올라가고, 값이 늘면 한 번 튀어 올라요. (움직임 줄이기 설정이면 바로 표시)
+  let lastNums = {};
+  let pinAnim = true;
+  const calm = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  function animateCounts(root) {
+    if (!root) return;
+    root.querySelectorAll('.cnt').forEach((el) => {
+      const to = Number(el.dataset.n);
+      const from = lastNums[el.dataset.k] ?? 0;
+      lastNums[el.dataset.k] = to;
+      if (calm() || from === to) return;
+      const t0 = performance.now();
+      const dur = Math.min(1200, 600 + Math.abs(to - from) * 10);
+      el.textContent = String(from);
+      const tick = (now) => {
+        const k = Math.min(1, (now - t0) / dur);
+        el.textContent = String(Math.round(from + (to - from) * (1 - (1 - k) ** 3)));
+        if (k < 1) requestAnimationFrame(tick);
+        else el.textContent = String(to);
+      };
+      requestAnimationFrame(tick);
+      if (to > from && from > 0) {
+        el.classList.remove('pop');
+        void el.offsetWidth; // 같은 애니메이션을 다시 켜기 위한 리플로우
+        el.classList.add('pop');
+      }
+    });
+  }
+
   function renderMap() {
     if (!map) return;
+    layers.mine.clearLayers();
     layers.rec.clearLayers();
     layers.pts.clearLayers();
     layers.me.clearLayers();
+    // 내가 공유해서 채운 칸: 초록 점선 사각형
+    for (const c of mineCells(store.state.calls)) {
+      L.rectangle(cellBounds(c, MAP_CELL_KM), { color: '#1fae7a', weight: 2, dashArray: '5 4', fillColor: '#1fae7a', fillOpacity: 0.14, interactive: true })
+        .addTo(layers.mine)
+        .bindTooltip(`내가 채운 칸 · 공유 ${c.count}건`, { direction: 'top' });
+      // 멀리서 봐도 보이도록 칸 중심에 초록 표식도 함께
+      const [[s, w], [n, e]] = cellBounds(c, MAP_CELL_KM);
+      L.circleMarker([(s + n) / 2, (w + e) / 2], { radius: 9, color: '#fff', weight: 2, fillColor: '#1fae7a', fillOpacity: 0.95 })
+        .addTo(layers.mine)
+        .bindTooltip(`내가 채운 칸 · 공유 ${c.count}건`, { direction: 'top' });
+    }
     const pts = demandPoints();
     const recs = recommend(pts, { now: Date.now(), target: targetTime(), user: userPos ?? undefined, limit: 40 });
     const maxFinal = recs[0]?.final || 1;
@@ -108,7 +151,7 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
     const spread = diversify(recs, 3, 5);
     spread.slice(0, 3).forEach((r, i) => {
       L.marker([r.lat, r.lng], {
-        icon: L.divIcon({ className: 'rank-pin', html: `<span>${i + 1}</span>`, iconSize: [26, 26] }),
+        icon: L.divIcon({ className: `rank-pin${pinAnim ? ' drop' : ''}`, html: `<span style="animation-delay:${i * 140}ms">${i + 1}</span>`, iconSize: [26, 26] }),
         keyboard: false,
       }).addTo(layers.rec);
     });
@@ -124,6 +167,7 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
       else if (focus.length === 1) map.setView(focus[0], 13);
       fitted = true;
     }
+    pinAnim = false;
     renderRecs(spread, pts.length);
   }
 
@@ -139,8 +183,16 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
     st.className = `chip${userPos ? ' on' : ''}`;
     st.innerHTML = `<svg class="ico sm" aria-hidden="true"><use href="#i-locate" /></svg>${userPos ? (userPos.source === 'gps' ? 'GPS' : '직접') : '위치 없음'}`;
     $('#mapData').innerHTML =
-      `<div class="datarow"><span><b>${total}</b>전체</span><span><b>${own}</b>내 콜</span><span><b>${Math.max(0, shared)}</b>공유·테스트</span>${pending ? `<span><b>${pending}</b>변환 대기</span>` : ''}</div>` +
+      `<div class="datarow">${[
+        ['total', total, '전체', ''],
+        ['own', own, '내 콜', ''],
+        ['shared', Math.max(0, shared), '공유·테스트', ''],
+        ['mine', mineCells(store.state.calls).length, '내가 채운 칸', 'mine'],
+      ]
+        .map(([k, n, label, cls]) => `<span${cls ? ` class="${cls}"` : ''}><b class="cnt" data-k="${k}" data-n="${n}">${n}</b>${label}</span>`)
+        .join('')}${pending ? `<span><b>${pending}</b>변환 대기</span>` : ''}</div>` +
       (geoError ? `<div class="bad small">${esc(geoError)}</div>` : '');
+    animateCounts($('#mapData'));
     const hint = $('#mapHint');
     hint.hidden = total >= 15;
     hint.innerHTML = '<svg class="ico sm" aria-hidden="true"><use href="#i-info" /></svg>데이터가 적어 추천이 정확하지 않아요';
@@ -413,6 +465,8 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
   return {
     async onShow() {
       syncSharedBtn();
+      lastNums = {};
+      pinAnim = true;
       try {
         await ensureMap();
         setTimeout(() => {

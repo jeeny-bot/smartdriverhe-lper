@@ -7,6 +7,8 @@ import { initShare } from './share-ui.js';
 import { initAuth } from './auth-ui.js';
 import { shortLabel } from './core/address.js';
 import { waitByPlace } from './core/wait.js';
+import { costBreakdown } from './core/cost.js';
+import { gameState } from './core/game.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -179,6 +181,52 @@ function renderBacktest(r) {
     <button class="btn small" data-action="backtest-run">다시 점검</button>`;
 }
 
+function renderCost(calls) {
+  const s = store.state.settings;
+  const r = costBreakdown(calls, { programFees: s.programFees, insuranceMonthly: s.insuranceMonthly });
+  const box = $('#costCard');
+  if (!r.revenue) {
+    box.innerHTML = '<div class="empty-bars">이 달엔 콜이 없어요</div>';
+    return;
+  }
+  const pct = (v) => (v / r.revenue) * 100;
+  const parts = [
+    ['fee', '수수료', r.fee],
+    ['prog', '프로그램비', r.program],
+    ['ins', '보험료', r.insurance],
+  ].filter(([, , v]) => v > 0);
+  const costPct = Math.min(100, pct(r.total));
+  const scale = costPct > 0 ? costPct / pct(r.total) : 1; // 비용이 매출을 넘으면 비율 맞춰 줄임
+  const seg = (cls, w, title) => `<i class="${cls}" style="flex:${Math.max(0.8, w).toFixed(2)}" title="${esc(title)}"></i>`;
+  const bar =
+    parts.map(([k, label, v]) => seg(`s-${k}`, pct(v) * scale, `${label} ${won(v)}`)).join('') +
+    (r.keep > 0 ? seg('s-keep', 100 - costPct, `내 몫 ${won(r.revenue - r.total)}`) : '');
+  const legend = parts.map(([k, label, v]) => `<span class="lg"><i class="s-${k}"></i>${label} <b>${won(v)}</b></span>`).join('');
+
+  const rows = r.platforms.length > 1 || r.program > 0
+    ? (() => {
+        const max = Math.max(0.3, ...r.platforms.map((p) => p.rate));
+        return r.platforms
+          .map((p, i) => {
+            const tone = r.platforms.length > 1 && i === 0 ? 'best' : r.platforms.length > 1 && i === r.platforms.length - 1 ? 'worst' : '';
+            return `<div class="costrow ${tone}"><span class="l">${esc(platformLabel(p.key))}</span><span class="b"><i style="width:${Math.max(4, Math.round((p.rate / max) * 100))}%"></i></span><span class="v">${(p.rate * 100).toFixed(1)}<small class="muted">%</small></span><span class="n muted">${p.count}건</span></div>`;
+          })
+          .join('');
+      })()
+    : '';
+  const gap = r.gap ? `<div class="costgap"><b>월 ${won(r.gap.won)}</b> 차이 <span class="muted">${esc(platformLabel(r.gap.worst))} vs ${esc(platformLabel(r.gap.best))}</span></div>` : '';
+  const hint = r.hasFixed ? '' : '<a class="chip pick" href="#settings">월 프로그램비·보험료 넣기</a>';
+  box.innerHTML = `
+    <div class="costtop">
+      <div class="keep"><small>100원 벌면</small><div><b>${r.keep}</b><span>원 남아요</span></div></div>
+      <div class="rate"><small>비용률</small><b>${(r.rate * 100).toFixed(1)}<small>%</small></b></div>
+    </div>
+    <div class="coststack" role="img" aria-label="매출 100원 중 비용 ${(r.rate * 100).toFixed(1)}%">${bar}</div>
+    <div class="costlegend">${legend}</div>
+    ${rows ? `<div class="costrows">${rows}</div>` : ''}
+    ${gap}${hint}`;
+}
+
 function renderWaitRank() {
   const rows = waitByPlace(store.state.calls);
   if (!rows.length) {
@@ -210,6 +258,7 @@ function renderStats() {
     <div class="centerline"></div>
     ${minor([['총수입', won(t.totalFare)], ['수수료', won(t.totalFee)], ['지출', won(t.expenses)]])}`;
 
+  renderCost(calls);
   renderWaitRank();
   const days = byDay(callLines(calls), expLines(exps), cutoff());
   const profitOf = new Map(days.map((d) => [d.date, d.summary.profit]));
@@ -243,6 +292,12 @@ function renderSettings() {
     PLATFORMS.filter((p) => p.key !== 'unknown')
       .map((p) => field(`fee-${p.key}`, `${p.label} 수수료율(%)`, s.platformRates[p.key], '비우면 기본값'))
       .join('');
+  const money = (id, label, value) => `<label>${label}<input id="${id}" type="number" inputmode="numeric" min="0" step="1000" value="${value || ''}" placeholder="0" /></label>`;
+  $('#fixedForm').innerHTML =
+    money('insurance', '월 보험료(원)', s.insuranceMonthly) +
+    PLATFORMS.filter((p) => p.key !== 'unknown')
+      .map((p) => money(`prog-${p.key}`, `${p.label} 월 프로그램비(원)`, s.programFees?.[p.key]))
+      .join('');
   $('#cutoff').value = s.cutoffHour;
   let pref = 'auto';
   try {
@@ -256,8 +311,36 @@ function renderSettings() {
   }
 }
 
+function renderGame() {
+  const g = gameState(store.state.calls, store.state.expenses, { cutoffHour: cutoff() });
+  const pct = Math.min(100, Math.round((g.into / g.span) * 100));
+  $('#gameCard').innerHTML = `
+    <div class="gtop">
+      <div class="ring" style="--p:${pct}"><span><small>Lv</small>${g.level}</span></div>
+      <div class="gmain"><b>${esc(g.name)}</b><div class="xpbar"><i style="width:${pct}%"></i></div><small class="muted">다음 레벨까지 ${g.next - g.xp}</small></div>
+      <div class="streak ${g.streak ? 'on' : ''}" title="연속 기록"><svg class="ico" aria-hidden="true"><use href="#i-flame" /></svg><b>${g.streak}</b><small>일</small></div>
+    </div>
+    <div class="missions" role="list">${g.missions.map((m) => `<div class="mission ${m.done ? 'done' : ''}" role="listitem"><span>${m.label}</span><b>${m.done ? '✓' : `${m.have}/${m.need}`}</b><i style="width:${(m.have / m.need) * 100}%"></i></div>`).join('')}</div>`;
+  $('#badgeTitle').textContent = `배지 ${g.earned}/${g.badges.length}`;
+  $('#badgeGrid').innerHTML = g.badges
+    .map((b) => `<div class="badge ${b.earned ? 'on' : ''}" title="${esc(b.caption)}"><div class="sgn"><b>${esc(b.num)}</b></div><small>${esc(b.caption)}</small>${b.earned ? '' : `<em>${b.have}/${b.need}</em>`}</div>`)
+    .join('');
+  // 새로 받은 배지 알림 (처음 켰을 땐 이미 받은 배지를 조용히 기록만)
+  const earned = g.badges.filter((b) => b.earned).map((b) => b.key);
+  const seen = store.state.settings.seenBadges;
+  if (!Array.isArray(seen)) store.setSettings({ seenBadges: earned });
+  else {
+    const fresh = g.badges.filter((b) => b.earned && !seen.includes(b.key));
+    if (fresh.length) {
+      store.setSettings({ seenBadges: earned });
+      toast(`새 배지: ${fresh.map((b) => b.caption).join(', ')}`);
+    }
+  }
+}
+
 function renderAll() {
   renderChips();
+  renderGame();
   $('#storageWarn').hidden = store.persistent;
   renderHome();
   if (!$('#tab-journal').hidden) renderJournal();
@@ -706,6 +789,13 @@ document.addEventListener('change', (e) => {
     if (t.value.trim() === '') store.setPlatformRate(key, null);
     else if (Number.isFinite(v) && v >= 0 && v <= 100) store.setPlatformRate(key, v);
     else t.value = store.state.settings.platformRates[key] ?? '';
+  } else if (t.id === 'insurance' || t.id?.startsWith('prog-')) {
+    const v = t.value.trim() === '' ? 0 : Number.parseInt(t.value, 10);
+    const s = store.state.settings;
+    if (!Number.isInteger(v) || v < 0 || v > 10_000_000) {
+      t.value = t.id === 'insurance' ? s.insuranceMonthly || '' : s.programFees?.[t.id.slice(5)] || '';
+    } else if (t.id === 'insurance') store.setSettings({ insuranceMonthly: v });
+    else store.setSettings({ programFees: { ...(s.programFees ?? {}), [t.id.slice(5)]: v } });
   } else if (t.id === 'fontPref') {
     FontPref.save(t.value);
   } else if (t.id === 'themePref') {

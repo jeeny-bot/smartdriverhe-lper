@@ -445,3 +445,83 @@ button.chip.toggle.on { background: var(--amber); color: var(--amber-ink); borde
 .btrow .a { text-align: right; font-variant-numeric: tabular-nums; }
 .btrow .m { text-align: center; color: var(--money); font-weight: 700; }
 .btrow.miss .m { color: var(--danger); }
+
+/* 내 비용 */
+.costtop { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.costtop small { display: block; color: var(--muted); font-size: 13px; }
+.costtop .keep b { font: var(--num-w) 56px/1 var(--font-num); color: var(--money); letter-spacing: 0; }
+.costtop .keep span { margin-left: 4px; font-size: 16px; font-weight: 600; }
+.costtop .keep > div { display: flex; align-items: baseline; }
+.costtop .rate { text-align: right; }
+.costtop .rate b { font: var(--num-w) 30px/1.1 var(--font-num); }
+.costtop .rate b small { display: inline; font-size: 16px; margin-left: 1px; }
+.coststack { display: flex; gap: 2px; height: 18px; border-radius: 9px; overflow: hidden; background: var(--raised); }
+.coststack i { display: block; min-width: 4px; }
+.s-fee { background: var(--sign-red); }
+.s-prog { background: var(--amber); }
+.s-ins { background: var(--sign-blue); }
+.s-keep { background: var(--sign-green); }
+.costlegend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.costlegend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.costlegend .lg i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.costlegend b { color: var(--text); font-variant-numeric: tabular-nums; }
+.costrows { border-top: 1px solid var(--line); }
+.costrow { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) 58px 34px; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.costrow .l { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.costrow .b { height: 8px; border-radius: 4px; background: var(--raised); overflow: hidden; }
+.costrow .b i { display: block; height: 100%; border-radius: 4px; background: var(--amber); }
+.costrow.best .b i { background: var(--sign-green); }
+.costrow.worst .b i { background: var(--sign-red); }
+.costrow .v { text-align: right; font: var(--num-w) 17px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.costrow .n { text-align: right; font-size: 12px; }
+.costgap { font-size: 15px; }
+.costgap b { color: var(--danger); }
+
+/* 게임: 레벨·연속·오늘의 미션 */
+.game { display: grid; gap: 12px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+.gtop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; }
+.ring { --p: 0; position: relative; width: 56px; height: 56px; border-radius: 50%; background: conic-gradient(var(--amber) calc(var(--p) * 1%), var(--raised) 0); display: grid; place-items: center; }
+.ring::before { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: var(--surface); }
+.ring span { position: relative; font: var(--num-w) 24px/1 var(--font-num); display: flex; align-items: baseline; gap: 1px; }
+.ring small { font-size: 11px; color: var(--muted); font-family: inherit; }
+.gmain { display: grid; gap: 5px; min-width: 0; }
+.gmain b { font-size: 16px; }
+.xpbar { height: 8px; border-radius: 4px; background: var(--raised); overflow: hidden; }
+.xpbar i { display: block; height: 100%; border-radius: 4px; background: var(--amber); }
+.streak { display: grid; justify-items: center; gap: 0; color: var(--faint); }
+.streak .ico { width: 22px; height: 22px; }
+.streak b { font: var(--num-w) 22px/1 var(--font-num); color: var(--text); }
+.streak small { font-size: 11px; color: var(--muted); }
+.streak.on .ico { color: var(--amber); fill: color-mix(in srgb, var(--amber) 35%, transparent); }
+.missions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mission { position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 9px 11px; border-radius: 12px; background: var(--raised); font-size: 13px; }
+.mission span, .mission b { position: relative; z-index: 1; }
+.mission b { font-variant-numeric: tabular-nums; }
+.mission i { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--amber); }
+.mission.done { background: color-mix(in srgb, var(--sign-green) 28%, var(--raised)); }
+.mission.done b { color: var(--money); }
+.mission.done i { background: var(--money); width: 100% !important; }
+
+/* 배지: 도로표지판 모양 */
+.badges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 8px; }
+.badge { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.badge .sgn { position: relative; width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center; background: var(--raised); color: var(--faint); }
+.badge .sgn::before { content: ''; position: absolute; inset: 4px; border-radius: 12px; border: 2px dashed var(--line); }
+.badge .sgn b { position: relative; font: var(--num-w) 22px/1 var(--font-num); letter-spacing: 0; }
+.badge.on .sgn { background: var(--sign-green); color: #fff; }
+.badge.on .sgn::before { border: 2px solid rgb(255 255 255 / 0.9); }
+.badge small { font-size: 11px; color: var(--muted); line-height: 1.25; }
+.badge em { font-style: normal; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.datarow .mine b { color: var(--money); }
+
+/* 지도 숫자 애니메이션 */
+.datarow .cnt { font-variant-numeric: tabular-nums; display: inline-block; transform-origin: 50% 70%; }
+.datarow .cnt.pop { animation: num-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.datarow .mine .cnt.pop { animation: num-pop-mine 0.7s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes num-pop { 0% { transform: scale(1); } 40% { transform: scale(1.5); } 100% { transform: scale(1); } }
+@keyframes num-pop-mine { 0% { transform: scale(1); text-shadow: 0 0 0 transparent; } 40% { transform: scale(1.7); text-shadow: 0 0 14px var(--money); } 100% { transform: scale(1); text-shadow: 0 0 0 transparent; } }
+.rank-pin.drop span { animation: pin-drop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes pin-drop { 0% { transform: translateY(-34px) scale(0.6); opacity: 0; } 60% { opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .datarow .cnt.pop, .datarow .mine .cnt.pop, .rank-pin.drop span { animation: none; }
+}
