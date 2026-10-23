@@ -871,5 +871,7 @@ store.subscribe(() => {
 setInterval(() => {
   if (store.isWorking() && !$('#tab-home').hidden && !document.hidden) renderHome();
 }, 15_000);
+// 예전 버전에서 넣어 둔 테스트(가짜) 콜 점이 이 기기에 남아 있으면 한 번에 지웁니다.
+store.removeSharedBySource('demo');
 showTab(location.hash.slice(1));
 share.refresh();

@@ -8,7 +8,6 @@ import { haversineKm, roughPlace, cellBounds } from './core/geo.js';
 import { mineCells, MAP_CELL_KM } from './core/game.js';
 import { shortLabel } from './core/address.js';
 import { buildPack, parsePack } from './core/share.js';
-import { makeDemoPoints } from './core/demo.js';
 import { loginRequired } from './auth-ui.js';
 import { computeWaits, expectedWait } from './core/wait.js';
 import { judgeCall, ownBenchmark, backtest } from './core/judge.js';
@@ -418,14 +417,6 @@ export function initMapTab({ toast, copyText, esc, download, fmtTime, pullShared
         pump();
         break;
       }
-      case 'map-demo-add': {
-        const n = store.addSharedPoints(makeDemoPoints({ now: Date.now() }), 'demo');
-        toast(`테스트 데이터 ${n}건을 넣었어요 (실제 콜이 아니에요)`);
-        break;
-      }
-      case 'map-demo-clear':
-        toast(`테스트 데이터 ${store.removeSharedBySource('demo')}건을 지웠어요`);
-        break;
       case 'map-export': {
         const pack = buildPack(store.state.calls);
         if (!pack.points.length) return toast('내보낼 콜 위치가 아직 없어요 (주소가 좌표로 바뀐 콜이 필요해요)');
